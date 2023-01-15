@@ -9,8 +9,31 @@ using VRageMath;
 
 namespace IngameScript
 {
+    /// <summary>
+    /// Скрипт управления добычей.
+    /// Совершает последовательное бурение породы, проходя снячало вдоль оси X, далее смещается по оси Y на ширину буровой головки, возвращается по оси X, и т.д. до максимально возможного по оси Y.
+    /// После чего заглубляется в породу нв ша 'Z_DEPTH_STEP' и продулывает все движения по X и Y в обратном направлении.
+    /// Бурение происходит до максимального заглубления по оси Z.
+    /// Пауза в бурении - при наполнении контейнера с маркером '[CARGO]' до 100%. Продолжает бурить когда '[CARGO]' снизиться до 80%
+    /// На текстовой панеле прог. блока отображается некоторая информация о процессе.
+    /// 
+    /// 1. Установить буровую головку (буры) на 3х осях.
+    /// 2. Указать размер буровой головки в осях X и Y (Параметр '_toolSize'. По умолчанию 6х6 м)
+    /// 3. Указать шаг прохода в породу (Параметр 'Z_DEPTH_STEP'. По умолчанию 1 м)
+    /// 4. Поршни в имени должны содержать маркеры '[X]' '[Y]' '[Z]' в соответствии с осями
+    /// 5. Прог. блок должени иметь маркер '[DRILL CONTROLLER]'.
+    ///
+    /// Комманды:
+    /// 1. 'Start' - запускает бурение с текуще точки
+    /// 1. 'StartAs [x] [y] [z]' - запускает бурение с точки x, y, z
+    /// 2. 'Stop' - останавленвает бурение
+    /// 3. 'To [x] [y] [z]' - перемещает буровую головку в точку x, y, z
+    /// </summary>
     class DrillStationModule : Module
     {
+        Vector2 _toolSize = new Vector2(6);
+        const float Z_DEPTH_STEP = 1;
+
         CNCPiston X, Y, Z;
         List<IMyShipDrill> _drills;
         List<IMyCargoContainer> _cargo;
@@ -18,15 +41,16 @@ namespace IngameScript
         IMyTextSurface _info;
         public override void Awake(IEnumerable<IMyTerminalBlock> blocks)
         {
-            _drills = blocks.OfType<IMyShipDrill>().ToList();
-            _cargo = blocks.OfType<IMyCargoContainer>().Where(x => x.CustomName.Contains("[CARGO]")).ToList();
-            _info = blocks.OfType<IMyProgrammableBlock>().First(x => x.CustomName.Contains("[DRILL CONTROLLER]")).GetSurface(0);
+            var myTerminalBlocks = blocks as IMyTerminalBlock[] ?? blocks.ToArray();
+            _drills = myTerminalBlocks.OfType<IMyShipDrill>().ToList();
+            _cargo = myTerminalBlocks.OfType<IMyCargoContainer>().Where(x => x.CustomName.Contains("[CARGO]")).ToList();
+            _info = myTerminalBlocks.OfType<IMyProgrammableBlock>().First(x => x.CustomName.Contains("[DRILL CONTROLLER]")).GetSurface(0);
 
             _info.WriteText("Init CNCDrill");
             
-            var xPistons = blocks.OfType<IMyPistonBase>().Where(x => x.CustomName.Contains("[X]"));
-            var yPistons = blocks.OfType<IMyPistonBase>().Where(x => x.CustomName.Contains("[Y]"));
-            var zPistons = blocks.OfType<IMyPistonBase>().Where(x => x.CustomName.Contains("[Z]"));
+            var xPistons = myTerminalBlocks.OfType<IMyPistonBase>().Where(x => x.CustomName.Contains("[X]"));
+            var yPistons = myTerminalBlocks.OfType<IMyPistonBase>().Where(x => x.CustomName.Contains("[Y]"));
+            var zPistons = myTerminalBlocks.OfType<IMyPistonBase>().Where(x => x.CustomName.Contains("[Z]"));
 
             Logger.Log(NoteLevel.Waring, $"{xPistons.Count()} {yPistons.Count()} {zPistons.Count()}");
             
@@ -36,7 +60,8 @@ namespace IngameScript
             
             Z = new CNCPiston(new SEPiston(zPistons, new LimitsF() {Min = 0.5f, Max = 1}));
 
-            MessageBroker.Post<string>("Start", StartDrilling);
+            MessageBroker.Post("Start", StartDrilling);
+            MessageBroker.Post<string>("StartAs", s => StartDrilling(s));
             MessageBroker.Post<string>("To", To);
             MessageBroker.Post("Stop", StopDrilling);
 
@@ -81,6 +106,20 @@ namespace IngameScript
             StartDrilling(new Vector3(x, y, z));
         }
 
+        void StartDrilling()
+        {
+            StartDrilling(new Vector3(X.PV, Y.PV, Z.PV));
+        }
+        void StartDrilling(string args)
+        {
+            var argsArr = args.Split(' ');
+            var x = argsArr.Length > 1? float.Parse(argsArr[1]) : 0;
+            var y = argsArr.Length > 2? float.Parse(argsArr[2]) : 0;
+            var z = argsArr.Length > 3? float.Parse(argsArr[3]) : 0;
+            
+            StartDrilling(new Vector3(x, y, z));
+        }
+
         void To(string args)
         {
             var argsArr = args.Split(' ');
@@ -95,16 +134,6 @@ namespace IngameScript
             };
         }
 
-        void StartDrilling(string args)
-        {
-            var argsArr = args.Split(' ');
-            var x = argsArr.Length > 1? float.Parse(argsArr[1]) : 0;
-            var y = argsArr.Length > 2? float.Parse(argsArr[2]) : 0;
-            var z = argsArr.Length > 3? float.Parse(argsArr[3]) : 0;
-            
-            StartDrilling(new Vector3(x, y, z));
-        }
-        
         void StartDrilling(Vector3 from)
         {
             _operation = new Operation()
@@ -170,11 +199,9 @@ namespace IngameScript
             }
             
             _drills.Enable(true);
-
-            var toolSize = new Vector2(6);
-            var zDepthStep = 1;
-            var yStep = (int)(start.Y / toolSize.Y);
-            var zStep = (int)(start.Z / zDepthStep);
+            
+            var yStep = (int)(start.Y / _toolSize.Y);
+            var zStep = (int)(start.Z / Z_DEPTH_STEP);
 
             while (!Z.Motor.IsMaxL)
             {
@@ -184,8 +211,8 @@ namespace IngameScript
                     {
                         var nextPoint = new Vector3(
                             X.Motor.LLimits.Max,
-                            Y.Motor.LLimits.Min + (yStep * toolSize.Y),
-                            Z.Motor.LLimits.Min + (zStep * zDepthStep));
+                            Y.Motor.LLimits.Min + (yStep * _toolSize.Y),
+                            Z.Motor.LLimits.Min + (zStep * Z_DEPTH_STEP));
                         step = WorkStep(nextPoint);
                         while (step.MoveNext())
                         {
@@ -197,8 +224,8 @@ namespace IngameScript
 
                         nextPoint = new Vector3(
                             X.Motor.LLimits.Max,
-                            Y.Motor.LLimits.Min + (yStep * toolSize.Y),
-                            Z.Motor.LLimits.Min + (zStep * zDepthStep));
+                            Y.Motor.LLimits.Min + (yStep * _toolSize.Y),
+                            Z.Motor.LLimits.Min + (zStep * Z_DEPTH_STEP));
                         step = WorkStep(nextPoint);
                         while (step.MoveNext())
                         {
@@ -209,8 +236,8 @@ namespace IngameScript
 
                         nextPoint = new Vector3(
                             X.Motor.LLimits.Min,
-                            Y.Motor.LLimits.Min + (yStep * toolSize.Y),
-                            Z.Motor.LLimits.Min + (zStep * zDepthStep));
+                            Y.Motor.LLimits.Min + (yStep * _toolSize.Y),
+                            Z.Motor.LLimits.Min + (zStep * Z_DEPTH_STEP));
                         step = WorkStep(nextPoint);
                         while (step.MoveNext())
                         {
@@ -222,8 +249,8 @@ namespace IngameScript
 
                         nextPoint = new Vector3(
                             X.Motor.LLimits.Min,
-                            Y.Motor.LLimits.Min + (yStep * toolSize.Y),
-                            Z.Motor.LLimits.Min + (zStep * zDepthStep));
+                            Y.Motor.LLimits.Min + (yStep * _toolSize.Y),
+                            Z.Motor.LLimits.Min + (zStep * Z_DEPTH_STEP));
                         step = WorkStep(nextPoint);
                         while (step.MoveNext())
                         {
@@ -241,8 +268,8 @@ namespace IngameScript
                 {
                     var nextPoint = new Vector3(
                         X.Motor.LLimits.Max,
-                        Y.Motor.LLimits.Max - (yStep * toolSize.Y),
-                        Z.Motor.LLimits.Min + (zStep * zDepthStep));
+                        Y.Motor.LLimits.Max - (yStep * _toolSize.Y),
+                        Z.Motor.LLimits.Min + (zStep * Z_DEPTH_STEP));
                     step = WorkStep(nextPoint);
                     while (step.MoveNext())
                     {
@@ -254,8 +281,8 @@ namespace IngameScript
                     
                     nextPoint = new Vector3(
                         X.Motor.LLimits.Max,
-                        Y.Motor.LLimits.Max - (yStep * toolSize.Y),
-                        Z.Motor.LLimits.Min + (zStep * zDepthStep));
+                        Y.Motor.LLimits.Max - (yStep * _toolSize.Y),
+                        Z.Motor.LLimits.Min + (zStep * Z_DEPTH_STEP));
                     step = WorkStep(nextPoint);
                     while (step.MoveNext())
                     {
@@ -266,8 +293,8 @@ namespace IngameScript
                     
                     nextPoint = new Vector3(
                         X.Motor.LLimits.Min,
-                        Y.Motor.LLimits.Max - (yStep * toolSize.Y),
-                        Z.Motor.LLimits.Min + (zStep * zDepthStep));
+                        Y.Motor.LLimits.Max - (yStep * _toolSize.Y),
+                        Z.Motor.LLimits.Min + (zStep * Z_DEPTH_STEP));
                     step = WorkStep(nextPoint);
                     while (step.MoveNext())
                     {
@@ -279,8 +306,8 @@ namespace IngameScript
                         
                     nextPoint = new Vector3(
                         X.Motor.LLimits.Min,
-                        Y.Motor.LLimits.Max - (yStep * toolSize.Y),
-                        Z.Motor.LLimits.Min + (zStep * zDepthStep));
+                        Y.Motor.LLimits.Max - (yStep * _toolSize.Y),
+                        Z.Motor.LLimits.Min + (zStep * Z_DEPTH_STEP));
                     step = WorkStep(nextPoint);
                     while (step.MoveNext())
                     {
