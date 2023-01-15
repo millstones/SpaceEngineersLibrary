@@ -253,9 +253,7 @@ namespace IngameScript
 
     struct PIDSetup
     {
-#pragma warning disable 649
         public float kp, ki, kd;
-#pragma warning restore 649
     }
 
     class Vector3PID

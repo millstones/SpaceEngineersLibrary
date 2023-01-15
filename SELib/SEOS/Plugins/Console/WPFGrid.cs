@@ -6,136 +6,94 @@ using VRageMath;
 
 namespace IngameScript
 {
-    sealed class WPFGrid : WPFItem
+    abstract class WPFContainerItem<T> : WPFItem where T : WPFItem
     {
-        List<Row> _rows;
-        
-        public WPFGrid(List<Row> rows, string def="") : base(def)
+        protected List<T> Container;
+        protected WPFContainerItem(List<T> init = null, string def="") : base(def)
         {
-            _rows = rows;
-            
-            OnResize(Canvas.Viewport);
+            Container = init ?? new List<T>();
         }
 
+        public void Add(params T[] itm)
+        {
+            Container.AddRange(itm);
+            Resize(Canvas.Viewport);
+        }
+        public void Remove(params T[] itms)
+        {
+            foreach (var itm in itms)
+            {
+                Container.Remove(itm);
+            }
+
+            Resize(Canvas.Viewport);
+        }
+        public void Remove(params int[] itmInd)
+        {
+            Container.RemoveIndices(itmInd.ToList());
+            Resize(Canvas.Viewport);
+        }
 
         protected override void OnResize(RectangleF viewport)
         {
-            var count = _rows.Count;
-            var rowSize = new Vector2(Canvas.Viewport.Width, Canvas.Viewport.Height/count);
-            var rowPos = Canvas.Viewport.Position;
-            for (var i = 0; i < count; i++)
+            foreach (var item in Container)
             {
-                var row = _rows[i];
-                row.Resize(new RectangleF(rowPos + new Vector2(0, rowSize.Y * i), rowSize));
+                item.Resize(viewport);
+            }
+        }
+        
+        public override void SetStyle(ConsoleStyle style)
+        {
+            base.SetStyle(style);
+            
+            foreach (var item in Container)
+            {
+                item.SetStyle(style);
             }
         }
 
         public override void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale,
             Vector2 arrowPos)
         {
-            foreach (var row in _rows)
+            foreach (var row in Container)
             {
                 row.Draw(ref sprites, ref newInteractive, measureStringInPixels, textScale, arrowPos);
             }
         }
-
-        public void AddRow(params Row[] rows)
+    }
+    class WPFGrid : WPFContainerItem<Row>
+    {
+        public WPFGrid(List<Row> rows, string def="") : base(rows, def)
+        { }
+        protected override void OnResize(RectangleF viewport)
         {
-            _rows.AddRange(rows);
-            Resize(Canvas.Viewport);
-        }
-
-        public void RemoveRow(params Row[] rows)
-        {
-            foreach (var row in rows)
+            var count = Container.Count;
+            var rowSize = new Vector2(Canvas.Viewport.Width, Canvas.Viewport.Height/count);
+            var rowPos = Canvas.Viewport.Position;
+            for (var i = 0; i < count; i++)
             {
-                _rows.Remove(row);
+                var row = Container[i];
+                row.Resize(new RectangleF(rowPos + new Vector2(0, rowSize.Y * i), rowSize));
             }
-
-            Resize(Canvas.Viewport);
-        }
-        
-        public void RemoveRow(params int[] rows)
-        {
-            _rows.RemoveIndices(rows.ToList());
-            Resize(Canvas.Viewport);
         }
     }
     
-    sealed class Row: WPFItem
+    // TODO Grid в Grid не вставлю. Может стоит ??
+    sealed class Row: WPFContainerItem<WPFControl>
     {
-        List<Cell> _cells;
-        public Row(List<Cell> cells, string def="") : base(def)
-        {
-            _cells = cells;
-
-            OnResize(Canvas.Viewport);
-        }
+        public Row(List<WPFControl> cells, string def="") : base(cells, def)
+        { }
 
         protected override void OnResize(RectangleF viewport)
         {
-            var count = _cells.Count;
+            var count = Container.Count;
             var celSize = new Vector2(Canvas.Viewport.Width/count, Canvas.Viewport.Height);
             var celPos = Canvas.Viewport.Position;
             for (var i = 0; i < count; i++)
             {
-                var cel = _cells[i];
+                var cel = Container[i];
                 cel.Resize(new RectangleF(celPos + new Vector2(celSize.X * i, 0), celSize));
             }
-        }
-
-        public override void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale,
-            Vector2 arrowPos)
-        {
-            foreach (var cell in _cells)
-            {
-                cell.Draw(ref sprites, ref newInteractive, measureStringInPixels, textScale, arrowPos);
-            }
-        }
-        public void AddCell(params Cell[] cells)
-        {
-            _cells.AddRange(cells);
-            OnResize(Canvas.Viewport);
-        }
-
-        public void RemoveCell(params Cell[] cells)
-        {
-            foreach (var row in cells)
-            {
-                _cells.Remove(row);
-            }
-
-            OnResize(Canvas.Viewport);
-        }
-        
-        public void RemoveCell(params int[] cells)
-        {
-            _cells.RemoveIndices(cells.ToList());
-            OnResize(Canvas.Viewport);
-        }
-    }
-
-    sealed class Cell : WPFItem
-    {
-        WPFControl _control;
-
-        public Cell(WPFControl control, string def="") : base(def)
-        {
-            _control = control;
-            
-            OnResize(Canvas.Viewport);
-        }
-
-        protected override void OnResize(RectangleF viewport)
-        {
-            _control.Resize(Canvas.Viewport);
-        }
-
-        public override void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale,
-            Vector2 arrowPos)
-        {
-            _control.Draw(ref sprites, ref newInteractive, measureStringInPixels, textScale, arrowPos);
-
         }
     }
 }

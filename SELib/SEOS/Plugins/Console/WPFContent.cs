@@ -8,7 +8,7 @@ namespace IngameScript
     abstract class WPFItem
     {
         protected Canvas Canvas { get; }
-        public ConsoleStyle Style { get; protected set; }
+        public ConsoleStyle Style { get; private set; } = ConsoleStyle.Default;
         public RectangleF Viewport => Canvas.Viewport;
 
         protected WPFItem(string def="")

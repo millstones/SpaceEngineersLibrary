@@ -5,33 +5,12 @@ using VRageMath;
 
 namespace IngameScript
 {
-    abstract class Page : WPFItem
+    abstract class Page : WPFContainerItem<WPFItem>
     {
         public string TitleId;
-        List<WPFItem> WPFContent = new List<WPFItem>();
-
-
-        protected Page(string titleId, string def="") : base(def)
+        protected Page(string titleId, string def="") : base(null, def)
         {
             TitleId = titleId;
-        }
-
-        protected override void OnResize(RectangleF viewport)
-        {
-            foreach (var wpfItem in WPFContent)
-            {
-                wpfItem.Resize(Canvas.Viewport);
-            }
-        }
-        
-        public override void SetStyle(ConsoleStyle style)
-        {
-            base.SetStyle(style);
-            
-            foreach (var wpfItem in WPFContent)
-            {
-                wpfItem.SetStyle(style);
-            }
         }
 
         public override void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale,
@@ -39,15 +18,7 @@ namespace IngameScript
         {
             DrawBG(ref sprites);
             
-            foreach (var wpfItem in WPFContent)
-            {
-                wpfItem.Draw(ref sprites, ref newInteractive, measureStringInPixels, textScale, arrowPos);
-            }
-        }
-
-        public void Add(WPFItem itm)
-        {
-            WPFContent.Add(itm);
+            base.Draw(ref sprites, ref newInteractive, measureStringInPixels, textScale, arrowPos);
         }
     }
 
