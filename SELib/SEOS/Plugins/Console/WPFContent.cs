@@ -3,16 +3,20 @@ using System.Collections.Generic;
 using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
-namespace IngameScript.SEWPF
+namespace IngameScript
 {
     abstract class WPFItem
     {
-        public Canvas Canvas { get; protected set; }
-        protected ConsoleStyle Style;
+        protected Canvas Canvas { get; }
+        public ConsoleStyle Style { get; protected set; }
+        public RectangleF Viewport => Canvas.Viewport;
 
-        protected WPFItem(string def)
+        protected WPFItem(string def="")
         {
-            Canvas.ContentDefinition = new WPFContentDefinition(def);
+            Canvas = new Canvas
+            {
+                ContentDefinition = new WPFContentDefinition(def)
+            };
         }
         
         // protected RectangleF SizeOfPadding(RectangleF rect)
@@ -109,6 +113,6 @@ namespace IngameScript.SEWPF
         {
             sprites.Add(GetSprite("SquareSimple", Canvas.Viewport, Canvas.ContentDefinition.Color?? Style.FirstColor));
         }
-        public abstract void Draw(ref List<MySprite> sprites);
+        public abstract void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale, Vector2 arrowPos);
     }
 }

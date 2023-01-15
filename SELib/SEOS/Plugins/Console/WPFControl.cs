@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
-namespace IngameScript.SEWPF
+namespace IngameScript
 {
     abstract class WPFControl : WPFItem
     {
@@ -58,14 +58,14 @@ namespace IngameScript.SEWPF
     {
         object _txt;
 
-        public Text(string def, string txt="") : base(def)
+        public Text(string txt="", string def="") : base(def)
         {
             _txt = Canvas.ContentDefinition.Data ?? txt;
         }
 
-        public override void Draw(ref List<MySprite> sprites)
+        public override void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale,
+            Vector2 arrowPos)
         {
-            var textScale = 0.75f;
             sprites.Add(GetText(_txt.ToString(), Canvas.Viewport, Canvas.ContentDefinition.Color ?? Style.SecondColor, textScale, Style.FontId));
         }
     }

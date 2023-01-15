@@ -1,15 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
-namespace IngameScript.SEWPF
+namespace IngameScript
 {
     sealed class WPFGrid : WPFItem
     {
         List<Row> _rows;
         
-        public WPFGrid(string def, List<Row> rows) : base(def)
+        public WPFGrid(List<Row> rows, string def="") : base(def)
         {
             _rows = rows;
             
@@ -29,11 +30,12 @@ namespace IngameScript.SEWPF
             }
         }
 
-        public override void Draw(ref List<MySprite> sprites)
+        public override void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale,
+            Vector2 arrowPos)
         {
             foreach (var row in _rows)
             {
-                row.Draw(ref sprites);
+                row.Draw(ref sprites, ref newInteractive, measureStringInPixels, textScale, arrowPos);
             }
         }
 
@@ -63,7 +65,7 @@ namespace IngameScript.SEWPF
     sealed class Row: WPFItem
     {
         List<Cell> _cells;
-        public Row(string def, List<Cell> cells) : base(def)
+        public Row(List<Cell> cells, string def="") : base(def)
         {
             _cells = cells;
 
@@ -82,11 +84,12 @@ namespace IngameScript.SEWPF
             }
         }
 
-        public override void Draw(ref List<MySprite> sprites)
+        public override void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale,
+            Vector2 arrowPos)
         {
             foreach (var cell in _cells)
             {
-                cell.Draw(ref sprites);
+                cell.Draw(ref sprites, ref newInteractive, measureStringInPixels, textScale, arrowPos);
             }
         }
         public void AddCell(params Cell[] cells)
@@ -116,7 +119,7 @@ namespace IngameScript.SEWPF
     {
         WPFControl _control;
 
-        public Cell(string def, WPFControl control) : base(def)
+        public Cell(WPFControl control, string def="") : base(def)
         {
             _control = control;
             
@@ -128,9 +131,11 @@ namespace IngameScript.SEWPF
             _control.Resize(Canvas.Viewport);
         }
 
-        public override void Draw(ref List<MySprite> sprites)
+        public override void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale,
+            Vector2 arrowPos)
         {
-            _control.Draw(ref sprites);
+            _control.Draw(ref sprites, ref newInteractive, measureStringInPixels, textScale, arrowPos);
+
         }
     }
 }

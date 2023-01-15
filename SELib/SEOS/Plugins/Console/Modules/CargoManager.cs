@@ -1,32 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Sandbox.ModAPI.Ingame;
-using VRage;
-using VRage.Game.GUI.TextPanel;
-using VRage.Game.ModAPI.Ingame;
-using VRageMath;
 
 namespace IngameScript
 {
-    class CargoManager : Module, IUserContent
+    class CargoManager : Module, ISEWPFContent
     {
         //public override Func<IMyTerminalBlock, bool> BlockFilter => b => b.GetType() == typeof(IMyCargoContainer);
         List<IMyCargoContainer> _cargos;
-        IEnumerable<ContentPage> _page;
-        
-        public IEnumerable<ContentPage> OnBuild() => _page;
+
+        public Page Page { get; }
+
 
         public override void Awake(IEnumerable<IMyTerminalBlock> blocks)
         {
             _cargos = blocks.OfType<IMyCargoContainer>().ToList();
 
+            /*
             _page = new ContentPage[]
             {
                 new CargoManagerPage("Cargo manager", this),
                 new CargoManagerDetailPage("Cargo manager detail", this),
             };
+            */
         }
 
         public override void Tick(double dt, IEnumerable<IMyTerminalBlock> blocks)
@@ -34,7 +30,7 @@ namespace IngameScript
             _cargos = blocks.OfType<IMyCargoContainer>().ToList();
         }
 
-
+/*
         class CargoManagerPage : ContentPage
         {
             CargoManager _cargoManager;
@@ -65,7 +61,7 @@ namespace IngameScript
                 return NoteLevel.Waring;
             }
         }
-        
+
         class CargoManagerDetailPage : ContentPage
         {
             CargoManager _cargoManager;
@@ -118,5 +114,6 @@ namespace IngameScript
                 }
             }
         }
+        */
     }
 }

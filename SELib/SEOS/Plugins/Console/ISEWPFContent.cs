@@ -1,5 +1,9 @@
 ﻿namespace IngameScript
 {
+    interface ISEWPFContent 
+    {
+        Page Page { get; }
+    }
     interface IInteractive
     {
         void OnClick(IConsole console);

@@ -1,18 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
-namespace IngameScript.SEWPF
+namespace IngameScript
 {
-    class Window : WPFItem
+    abstract class Page : WPFItem
     {
-        public string Title;
+        public string TitleId;
         List<WPFItem> WPFContent = new List<WPFItem>();
-        
 
-        public Window(string title, string def) : base(def)
+
+        protected Page(string titleId, string def="") : base(def)
         {
-            Title = title;
+            TitleId = titleId;
         }
 
         protected override void OnResize(RectangleF viewport)
@@ -33,13 +34,14 @@ namespace IngameScript.SEWPF
             }
         }
 
-        public override void Draw(ref List<MySprite> sprites)
+        public override void Draw(ref List<MySprite> sprites, ref IInteractive newInteractive, Func<string, float, Vector2> measureStringInPixels, float textScale,
+            Vector2 arrowPos)
         {
             DrawBG(ref sprites);
             
             foreach (var wpfItem in WPFContent)
             {
-                wpfItem.Draw(ref sprites);
+                wpfItem.Draw(ref sprites, ref newInteractive, measureStringInPixels, textScale, arrowPos);
             }
         }
 
@@ -47,6 +49,13 @@ namespace IngameScript.SEWPF
         {
             WPFContent.Add(itm);
         }
-        
+    }
+
+    class Page404 : Page
+    {
+        public Page404(string notFoundedPageName = "") : base("ERROR 404")
+        {
+            Add(new Text($"Page {notFoundedPageName} not found"));
+        }
     }
 }
