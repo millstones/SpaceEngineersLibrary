@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>5843fce9-fc58-4945-b9db-3d30d8c02f72</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>SEOS</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)DebugAPI.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DroneActualStatus.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ForPB.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalConst.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MessageBroker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\Carrier\CarrierController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\CNC\CNCModule.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\CNC\CNCMotor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\CNC\CNCPiston.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\CNC\CNCRotor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\CNC\CNCSystem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\Crane\CraneModule.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\DrillStation\DrillStationModule.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\DroneStanton\DroneRadarMasterRadio.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\DroneStanton\DroneStantonMasterRadio.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\DroneStanton\ProductController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\Engine.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\GyroController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\MainConnector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Modules\ThrustController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ConsoleManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ConsoleInput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ConsoleNameParser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ConsolePlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ConsolePluginSetup.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ConsolePluginExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ContentItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Console.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Default\DefaultScreenLayout.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Default\DefaultUpPanel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\IInteractive.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\IUserContent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Layer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Modules\CargoManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\SEWPF\Canvas.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\SEWPF\WPFContent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\SEWPF\Window.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\SEWPF\WPFControl.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\SEWPF\WPFGrid.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\SEWPF\WPFContentDefinition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Tasks\CancellationToken.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Tasks\Task.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Tasks\TaskBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Tasks\TaskExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Tasks\TaskPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Tasks\TaskStatus.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Product.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PidController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ReactiveProperty.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Repo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEMotor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEPiston.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serializer\ISerializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PBCustomDataStorage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interfaces.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SERotor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\PathBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Radio\RadioLang.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GridInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\TransportationTaskInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)StationActualStatus.cs" />
+  </ItemGroup>
+</Project>
