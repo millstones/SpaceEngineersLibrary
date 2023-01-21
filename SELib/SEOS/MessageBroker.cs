@@ -221,7 +221,7 @@ namespace IngameScript
                             _setter(requester, (T) _serialize.Deserialize(ref data1));
 
                         }
-                        catch (Exception e)
+                        catch
                         {
                             try
                             {

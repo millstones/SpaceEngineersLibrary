@@ -11,34 +11,28 @@ namespace IngameScript
     {
         void ShowMsgBox(string msg);
         void SwitchPage(string to);
-        void SwitchPage(ContentPage to);
+        void SwitchPage(Page to);
     }
+    
     class Console : IConsole
     {
         public string ConsoleId;
+        public RectangleF Viewport => _sysLayoutPage.Viewport;
         IInteractive _lastInteractive;
-        Content _currentContent;
+        //Page _currentContent;
         IMyTextSurface _surface;
-        ConsoleStyle _style;
-        KeyValuePair<RectangleF, Content> _userArea;
-        KeyValuePair<RectangleF, MsgBox> _msgBoxArea;
-
-        RectangleF _sysAreaRect;
-        ContentPanel _sysAreaContent;
+        SysLayoutPage _sysLayoutPage;
+        
 
         ConsoleInput _input;
-        RectangleF _viewport;
-        Repository<string, Content> _userContent;
-        public Console(IEnumerable<IUserContent> content, IMyTextSurface surface, string consoleId, string startPage, ConsoleStyle style, KeyValuePair<RectangleF, Content> userArea, KeyValuePair<RectangleF, ContentPanel> sysArea, KeyValuePair<RectangleF, MsgBox> msgBoxArea)
+        //RectangleF _viewport;
+        Repository<string, Page> _userContent;
+        public Console(IMyTextSurface surface, SysLayoutPage sysLayoutPage, IEnumerable<ISEWPFContent> content, string consoleId, string startPage)
         {
             _surface = surface;
+            _sysLayoutPage = sysLayoutPage;
             ConsoleId = consoleId;
-            _style = style;
-            _userArea = userArea;
-            _userContent = new Repository<string, Content>();
-            _msgBoxArea = msgBoxArea;
-            _sysAreaRect = sysArea.Key;
-            _sysAreaContent = new ConsoleSysPanel(this).Add(sysArea.Value);
+            _userContent = new Repository<string, Page>();
 
             SetupSurface();
             InitContent(content);
@@ -52,57 +46,51 @@ namespace IngameScript
             _surface.ScriptBackgroundColor = Color.Black; //_layout.Style.SecondColor;
             _surface.ScriptForegroundColor = Color.Black;
             
-            _viewport = new RectangleF((_surface.TextureSize - _surface.SurfaceSize) / 2f, _surface.SurfaceSize);
-            _viewport = new RectangleF(_viewport.Position + ConsolePluginSetup.SCREEN_BORDER_PX,
-                _viewport.Size - ConsolePluginSetup.SCREEN_BORDER_PX * 2);
+            var viewport = new RectangleF((_surface.TextureSize - _surface.SurfaceSize) / 2f, _surface.SurfaceSize);
+            viewport = new RectangleF(viewport.Position + ConsolePluginSetup.SCREEN_BORDER_PX,
+                viewport.Size - ConsolePluginSetup.SCREEN_BORDER_PX * 2);
+            
+            _sysLayoutPage.Resize(viewport);
         }
-        void InitContent(IEnumerable<IUserContent> content)
+        void InitContent(IEnumerable<ISEWPFContent> content)
         {
             using (var frame = _surface.DrawFrame())
             {
                 var sprites = new List<MySprite>();
-                var bg = MySprite.CreateSprite("SquareTapered", _viewport.Center, _viewport.Size * 0.25f);
-                var redCircle = new MySprite()
-                {
-                    Color = Color.Red,
-                    Type = SpriteType.TEXTURE,
-                    Data = "SquareTapered",
-                    Position = _viewport.Center,
-                    Size = _viewport.Size * 0.1f,
-                    Alignment = TextAlignment.CENTER
-                };
 
                 foreach (var userContent in content)
                 {
-                    var viewport = _viewport;
-                    var nodes = userContent.OnBuild();
+                    BuildContent(userContent.Page);
+                    /*
                     foreach (var node in nodes)
                     {
                         new ContentText("Build '" + node.NameId + "' page")
                             .Draw(viewport, Vector2.PositiveInfinity,  ConsoleStyle.BlackWhiteRed, ref sprites, ref _lastInteractive,
                                 MeasureStringInPixels, _surface.FontSize);
                         
-                        BuildContent(node);
+                        
                     }
+                    */
                 }
                 
                 frame.AddRange(sprites);
             }
         }
 
-        void BuildContent(ContentPage page)
+        void BuildContent(Page page)
         {
-            _userContent.Add(page.NameId, page);
+            page.SetStyle(_sysLayoutPage.Style);
+            _userContent.Add(page.TitleId, page);
         }
         public void SwitchPage(string to)
         {
-            _currentContent = _userContent.GetOrDefault(to);
+            _sysLayoutPage.SwitchUserContent(_userContent.GetOrDefault(to) ?? new Page404(to));
         }
 
-        public void SwitchPage(ContentPage to)
+        public void SwitchPage(Page to)
         {
             BuildContent(to);
-            SwitchPage(to.NameId);
+            SwitchPage(to.TitleId);
         }
 
         public void RemoveInput() => _input = null;
@@ -128,9 +116,9 @@ namespace IngameScript
             {
                 var spriteList = new List<MySprite>();
 
-                var arrowPos = _input?.ArrowPos(_viewport) ?? Vector2.PositiveInfinity;
+                var arrowPos = _input?.ArrowPos() ?? Vector2.PositiveInfinity;
                     
-                Draw(arrowPos, ref spriteList, ref interactive);
+                _sysLayoutPage.Draw(ref spriteList, ref interactive, MeasureStringInPixels, _surface.FontSize, arrowPos);
 
                 if (_input!= null && _input.IsEnableControl)
                     DrawArrow(arrowPos, ref spriteList);
@@ -145,26 +133,12 @@ namespace IngameScript
             _lastInteractive?.OnHoverEnable(true);
         }
         
-        Vector2 MeasureStringInPixels(string txt, float scale) => _surface.MeasureStringInPixels(new StringBuilder(txt), _style.FontId, scale);
-        
-        void Draw(Vector2 arrowPos, ref List<MySprite> spriteList, ref IInteractive newInteractive)
-        {
-            var viewport = _viewport;
-            var userContent = _currentContent ?? _userArea.Value;
-            var textScale = _surface.FontSize;
-
-            _sysAreaContent
-                .Draw(CalcViewport(viewport, _sysAreaRect), arrowPos, _style, ref spriteList, ref newInteractive, MeasureStringInPixels, textScale);
-            userContent
-                .Draw(CalcViewport(viewport, _userArea.Key), arrowPos, _style, ref spriteList, ref newInteractive, MeasureStringInPixels, textScale);
-            _msgBoxArea.Value
-                .Draw(CalcViewport(viewport, _msgBoxArea.Key), arrowPos, _style, ref spriteList, ref newInteractive, MeasureStringInPixels, textScale);
-        }
+        Vector2 MeasureStringInPixels(string txt, float scale) => _surface.MeasureStringInPixels(new StringBuilder(txt), _sysLayoutPage.Style.FontId, scale);
 
         public void Tick()
         {
             _input?.Tick();
-            if (DateTime.Now > _msgAutoCloseTime) _msgBoxArea.Value.Hide();
+            if (DateTime.Now > _msgAutoCloseTime) _sysLayoutPage.HideMsgBox();
         }
 
         public void Message(string msg)
@@ -176,17 +150,9 @@ namespace IngameScript
         public void ShowMsgBox(string msg)
         {
             _msgAutoCloseTime =DateTime.Now + TimeSpan.FromSeconds(ConsolePluginSetup.MSG_SHOW_TIME_SEC);
-            _msgBoxArea.Value.Show(msg);
+            _sysLayoutPage.ShowMsgBox(msg);
         }
 
-        RectangleF CalcViewport(RectangleF absViewport, RectangleF offset)
-        {
-            var position = absViewport.Position + offset.Position * absViewport.Size;
-            var size = absViewport.Size * offset.Size;
-                
-            return new RectangleF(position, size);
-        }
-        
         void DrawArrow(Vector2? pos, ref List<MySprite> sprites)
         {
             /*
@@ -203,14 +169,13 @@ namespace IngameScript
                     Data = "Triangle",
                     Position = pos,
                     Size = new Vector2(8, 12),
-                    Color = Color.Lighten(_style.ThirdColor, 0.8), //hsv.HSVtoColor(),
+                    Color = Color.Lighten(_sysLayoutPage.Style.ThirdColor, 0.8), //hsv.HSVtoColor(),
                     RotationOrScale = -(float)Math.PI / 3f
                 }
             );
         }
         class ConsoleSysPanel : ContentPanel
         {
-
             public ConsoleSysPanel(Console console)
             {
                 Vertical = true;
@@ -223,7 +188,7 @@ namespace IngameScript
                     ;
                 var pageName = new ContentPanel(vertical: true)
                         .Add(new ContentText("PAGE", alignment: TextAlignment.LEFT))
-                        .Add(new ContentText(new ReactiveProperty<string>(() => console._userContent.GetKeyFor(console._currentContent))
+                        .Add(new ContentText(new ReactiveProperty<string>(() => console._sysLayoutPage.TitleId)
                             , alignment: TextAlignment.RIGHT))
                     ;
 

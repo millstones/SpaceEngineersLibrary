@@ -90,7 +90,6 @@ namespace IngameScript
 
         public void Test(string cmd)
         {
-            var z = 0;
             var a = -180f;
             /*
             // [x] [y] [z] [a]

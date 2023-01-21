@@ -5,7 +5,7 @@ using System.Linq;
 using Sandbox.ModAPI.Ingame;
 using VRageMath;
 
-namespace IngameScript.Crane
+namespace IngameScript
 {
     class CraneModule : Module
     {

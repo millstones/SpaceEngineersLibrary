@@ -1,22 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using Sandbox.ModAPI.Ingame;
-using VRage.Game.GUI.TextPanel;
-using VRage.Game.VisualScripting.Utils;
-using VRageMath;
 
 namespace IngameScript
 {
-    class ConsolePlugin : Plugin
+class ConsolePlugin : Plugin
     {
         static ConsolePlugin INSTANCE;
         
         ConsoleManager _consoleManager;
-        List<IUserContent> _pages = new List<IUserContent>();
+        SysLayoutPage _sysPage;
+        List<ISEWPFContent> _pages = new List<ISEWPFContent>();
 
         SEOS _os;
         IEnumerator _updateProcess;
@@ -51,7 +46,7 @@ namespace IngameScript
             // Init
             foreach (var module in _os.Modules)
             {
-                var page = module as IUserContent;
+                var page = module as ISEWPFContent;
                 if (page != null)
                     RegisterPage(page);
 
@@ -62,8 +57,8 @@ namespace IngameScript
             // Parse Custom dates
             // ...
             //
-
-            _consoleManager = _consoleManager ?? new DefaultScreenConsoleManager(_pages);
+            
+            _consoleManager = new ConsoleManager(_pages, _sysPage ?? new DefaultSysLayoutPage());
 
             var tick = 0;
             // Update
@@ -90,16 +85,16 @@ namespace IngameScript
                 throw new Exception("Console plugin not create");
         }
 
-        public static void RegisterPage(IUserContent page)
+        public static void RegisterPage(ISEWPFContent page)
         {
             ThrowIfNotCreate();
             INSTANCE._pages.Add(page);
         }
 
-        public static void UseCanvas(ConsoleManager mainScreen)
+        public static void UseCanvas(SysLayoutPage sysPage)
         {
             ThrowIfNotCreate();
-            INSTANCE._consoleManager = mainScreen;
+            INSTANCE._sysPage = sysPage;
         }
         
         public static void SwitchPage(string to, string onConsoleId = "")

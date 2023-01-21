@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using Sandbox.ModAPI.Ingame;
-using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
 namespace IngameScript
@@ -10,7 +8,7 @@ namespace IngameScript
     {
         public Console Console;
     }
-    class ConsoleInput : IDisposable
+class ConsoleInput : IDisposable
     {
         public IMyCockpit Cockpit;
         public bool IsEnableControl;
@@ -58,8 +56,9 @@ namespace IngameScript
 
         Vector2 _arrowPos;
 
-        public Vector2 ArrowPos(RectangleF viewport)
+        public Vector2 ArrowPos()
         {
+            var viewport = _forConsole.Viewport;
             _arrowPos = Vector2.Clamp(_arrowPos, viewport.Position, viewport.Position + viewport.Size);
             return _arrowPos;
         }

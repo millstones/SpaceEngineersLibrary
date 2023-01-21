@@ -1,7 +1,7 @@
 ﻿using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
-namespace IngameScript.SEWPF
+namespace IngameScript
 {
     struct WPFContentDefinition
     {
@@ -13,6 +13,7 @@ namespace IngameScript.SEWPF
         public bool? TextWrapping;
 
         public object Data;
+
         public WPFContentDefinition(string def)
         {
             this = Parse(def);

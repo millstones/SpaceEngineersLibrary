@@ -2,31 +2,33 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Sandbox.ModAPI.Ingame;
 using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
 namespace IngameScript
 {
-    abstract class ConsoleManager
+class ConsoleManager
     {
-        IEnumerable<IUserContent> _content;
+        IEnumerable<ISEWPFContent> _content;
+        SysLayoutPage _sysPage;
+        
         Repository<long, IMyCockpit> _inputs = new Repository<long, IMyCockpit>();
         Repository<long, Console> _consoles = new Repository<long, Console>();
 
-
+/*
         KeyValuePair<RectangleF, ContentPanel> _sysArea;
         KeyValuePair<RectangleF, Content> _userArea;
         KeyValuePair<RectangleF, MsgBox> _msgBoxArea;
-        
-        protected ConsoleStyle Style = ConsoleStyle.MischieviousGreen;
+        */
 
         string _status;
-        protected ConsoleManager(IEnumerable<IUserContent> content)
+        public ConsoleManager(IEnumerable<ISEWPFContent> content, SysLayoutPage sysPage)
         {
             _content = content;
-            
+            _sysPage = sysPage;
+
+            /*
             var sysArea = CreateArea(Vector2.Zero, new Vector2(1, 0.15f));
             var userArea = CreateArea(new Vector2(0, 0.15f), Vector2.One);
             var msgBoxArea = CreateArea(new Vector2(0.25f, 0.25f), new Vector2(0.75f, 0.75f));
@@ -34,12 +36,10 @@ namespace IngameScript
             _sysArea = new KeyValuePair<RectangleF, ContentPanel>(sysArea, new CanvasSysPanel(this));
             _userArea = new KeyValuePair<RectangleF, Content>(userArea, new ContentText(new ReactiveProperty<string>("CREATE CONTENT !!")));
             _msgBoxArea = new KeyValuePair<RectangleF, MsgBox>(msgBoxArea, new MsgBox());
-
+*/
             _status = "INIT";
         }
 
-        protected void UseDefaultUserContent(Content content) => _userArea = new KeyValuePair<RectangleF, Content>(_userArea.Key, content);
-        
         IEnumerator _updateBlocksProcess, _drawProcess;
         IEnumerator<float> FindCanvases(IEnumerable<IMyTerminalBlock> blocks)
         {
@@ -61,7 +61,7 @@ namespace IngameScript
                 ids.Add(id);
                 if (!_consoles.Contains(id))
                 {
-                    _consoles.Add(id, new Console(_content, surface, lcdResult.LcdNameId, lcdResult.SiteNameId, Style, _userArea, _sysArea, _msgBoxArea));
+                    _consoles.Add(id, new Console(surface, _sysPage, _content, lcdResult.LcdNameId, lcdResult.SiteNameId));
                 }
 
                 yield return (float) i / myTerminalBlocks.Length;
@@ -236,16 +236,6 @@ namespace IngameScript
                 var id = _consoles.GetKeyFor(x => x.ConsoleId == onConsoleId, -1);
                 if (id != -1) 
                     _consoles.GetOrDefault(id)?.ShowMsgBox(msg);
-            }
-        }
-
-        class CanvasSysPanel : ContentPanel
-        {
-            public CanvasSysPanel(ConsoleManager consoleManager) : base(vertical: true)
-            {
-                Add(new ContentText(new ReactiveProperty<string>(() => consoleManager._consoles.Ids.Length.ToString()), alignment: TextAlignment.CENTER));
-                Add(new ContentText(new ReactiveProperty<string>(() => consoleManager._status), alignment: TextAlignment.CENTER));
-                Add(new ContentText(new ReactiveProperty<string>(() => consoleManager._inputs.Ids.Length.ToString()), alignment: TextAlignment.CENTER));
             }
         }
     }
