@@ -28,6 +28,6 @@ namespace IngameScript.New
         string FontId { get; }
         float FontScale { get; }
         void AddFrameSprites(List<MySprite> sprites);
-        Vector2 MeasureText(string txt);
+        Vector2 MeasureText(string txt, string fontId, float scale);
     }
 }

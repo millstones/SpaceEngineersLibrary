@@ -85,6 +85,74 @@ namespace IngameScript.New
             return s * step; 
         }
 
+        protected MySprite GetText(IDrawSurface surface, string text, RectangleF viewport, Color color)
+        {
+            var scale = surface.FontScale;
+            var textSize = surface.MeasureText(text, surface.FontId, scale);
+            if (textSize.X > viewport.Width)
+            {
+                scale = viewport.Width / textSize.X;
+            }
+            if (textSize.Y > viewport.Height)
+            {
+                scale = viewport.Height / textSize.Y;
+            }
+            textSize = surface.MeasureText(text, surface.FontId, scale);
+            /*
+            if (Vertical)
+            {
+                return alignment == TextAlignment.LEFT
+                    ? viewport.Center - new Vector2(0, viewport.Height / 2f)
+                    : alignment == TextAlignment.RIGHT
+                        ? viewport.Center + new Vector2(0, viewport.Height / 2f)
+                        : viewport.Center;
+            }
+            */
+            var alt = _alignment == Alignment.Left
+                ? TextAlignment.LEFT
+                : _alignment == Alignment.Right
+                    ? TextAlignment.RIGHT
+                    : TextAlignment.CENTER;
+            
+            var pos = alt == TextAlignment.LEFT
+                ? viewport.Center - new Vector2(viewport.Width / 2, textSize.Y / 2f)
+                : alt == TextAlignment.RIGHT
+                    ? viewport.Center - new Vector2(-viewport.Width / 2, textSize.Y / 2f)
+                    : viewport.Center - new Vector2(0, textSize.Y / 2f);
+
+            return
+                new MySprite
+                {
+                    Type = SpriteType.TEXT,
+                    Data = text,
+                    Size = viewport.Size,
+                    Position = pos,
+                    Color = color,
+                    FontId = surface.FontId,
+                    RotationOrScale = scale,
+                    Alignment = alt,
+                };
+        }
+
+        protected MySprite GetSprite(string texture, RectangleF viewport, Color color, float rotation = 0)
+        {
+            return new MySprite
+            {
+                Type = SpriteType.TEXTURE,
+                Data = texture,
+                Size = viewport.Size,
+                Position = viewport.Center,
+                Color = color,
+                RotationOrScale = rotation,
+                Alignment = TextAlignment.CENTER,
+            };
+        }
+
+        protected void SizeOfPadding(ref RectangleF rect)
+        {
+            rect.Position += ConsolePluginSetup.PADDING_PX;
+            rect.Size -= ConsolePluginSetup.PADDING_PX * 2;
+        }
         protected abstract void OnDraw(IDrawSurface surface, ref RectangleF viewport);
     }
 
@@ -103,7 +171,7 @@ namespace IngameScript.New
         }
         protected override void OnDraw(IDrawSurface surface, ref RectangleF viewport)
         {
-            throw new NotImplementedException();
+            surface.AddFrameSprites(new List<MySprite>(){GetText(surface, _txt.Get(), viewport, Color.White)});
         }
     }
 }

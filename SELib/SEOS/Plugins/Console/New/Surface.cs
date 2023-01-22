@@ -42,7 +42,7 @@ namespace IngameScript.New
                 _currentPage = startPage;
 
                 Viewport = SetupSurface();
-                GridStep = MeasureText(" ");
+                GridStep = MeasureText(" ", FontId, FontScale);
             }
 
             RectangleF SetupSurface()
@@ -66,8 +66,8 @@ namespace IngameScript.New
                 _frameSprites.AddRange(sprites);
             }
 
-            public Vector2 MeasureText(string txt) =>
-                _panel.MeasureStringInPixels(new StringBuilder(txt), FontId, FontScale);
+            public Vector2 MeasureText(string txt, string fontId, float scale)=>
+                _panel.MeasureStringInPixels(new StringBuilder(txt), fontId, scale);
 
             public void SwitchPage(string id)
             {

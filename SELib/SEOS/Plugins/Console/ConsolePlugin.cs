@@ -34,7 +34,7 @@ namespace IngameScript
 
         void AddSubmodules()
         {
-            _os.AddModule<CargoManager>(UpdateFrequency.Update100);
+            //_os.AddModule<CargoManager>(UpdateFrequency.Update100);
         }
 
         public override void Message(string argument, UpdateType updateSource)
@@ -52,7 +52,7 @@ namespace IngameScript
             // Init
             foreach (var module in _os.Modules)
             {
-                var page = module as IUserContent;
+                var page = module as IConsolePage;
                 if (page != null)
                     RegisterPage(page);
 
