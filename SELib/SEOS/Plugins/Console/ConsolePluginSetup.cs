@@ -27,7 +27,7 @@ namespace IngameScript
 
     enum Alignment
     {
-        Center, Left, Right, Up, Down, UpLeft, UpRight, DownLeft, DownRight
+        Center, Left, Right, Up, Down, CenterLeft, CenterUp, UpLeft, UpRight, DownLeft, DownRight
     }
     
     enum ConsoleFonts

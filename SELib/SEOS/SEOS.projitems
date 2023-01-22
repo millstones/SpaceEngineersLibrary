@@ -43,6 +43,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\IUserContent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Layer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Modules\CargoManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\New\Grid.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\New\Interfaces.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\New\Page.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\New\PageItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\New\Surface.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\SEWPF\Canvas.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\SEWPF\WPFContent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\SEWPF\Window.cs" />

@@ -1,4 +1,5 @@
 ﻿using System;
+using IngameScript.New;
 
 namespace IngameScript
 {
@@ -8,14 +9,9 @@ namespace IngameScript
         {
             return Enum.GetName(typeof(ConsoleFonts), fonts);
         }
-        public static SEOS AddConsoleSite<T>(this SEOS seos, T site) where T : IUserContent
+        public static SEOS AddConsoleSite<T>(this SEOS seos, T site) where T : IConsolePage
         {
             ConsolePlugin.RegisterPage(site);
-            return seos;
-        }
-        public static SEOS UseCanvas(this SEOS seos, ConsoleManager consoleManager) 
-        {
-            ConsolePlugin.UseCanvas(consoleManager);
             return seos;
         }
     }

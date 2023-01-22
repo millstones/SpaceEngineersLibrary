@@ -4,9 +4,9 @@ namespace IngameScript
 {
     struct ParseLcdResult
     {
-        public string LcdNameId;
+        public string SurfaceNameId;
         public int SurfaceInd;
-        public string SiteNameId;
+        public string StartPageNameId;
     }
 
     struct ParseLcdControllerResult
@@ -79,9 +79,9 @@ namespace IngameScript
 
             return new ParseLcdResult
             {
-                LcdNameId = lcdNameId,
+                SurfaceNameId = lcdNameId,
                 SurfaceInd = surfaceInd,
-                SiteNameId = siteNameId
+                StartPageNameId = siteNameId
             };
         }
 

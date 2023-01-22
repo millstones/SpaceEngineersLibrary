@@ -61,7 +61,7 @@ namespace IngameScript
                 ids.Add(id);
                 if (!_consoles.Contains(id))
                 {
-                    _consoles.Add(id, new Console(_content, surface, lcdResult.LcdNameId, lcdResult.SiteNameId, Style, _userArea, _sysArea, _msgBoxArea));
+                    _consoles.Add(id, new Console(_content, surface, lcdResult.SurfaceNameId, lcdResult.StartPageNameId, Style, _userArea, _sysArea, _msgBoxArea));
                 }
 
                 yield return (float) i / myTerminalBlocks.Length;

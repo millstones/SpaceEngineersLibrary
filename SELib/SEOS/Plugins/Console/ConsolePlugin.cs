@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using IngameScript.New;
 using Sandbox.ModAPI.Ingame;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.VisualScripting.Utils;
@@ -15,8 +16,8 @@ namespace IngameScript
     {
         static ConsolePlugin INSTANCE;
         
-        ConsoleManager _consoleManager;
-        List<IUserContent> _pages = new List<IUserContent>();
+        Surface _surface;
+        List<IConsolePage> _pages = new List<IConsolePage>();
 
         SEOS _os;
         IEnumerator _updateProcess;
@@ -38,7 +39,7 @@ namespace IngameScript
 
         public override void Message(string argument, UpdateType updateSource)
         {
-            _consoleManager?.Message(argument);
+            _surface?.Message(argument);
         }
         
         public override void Tick(double dt)
@@ -63,7 +64,7 @@ namespace IngameScript
             // ...
             //
 
-            _consoleManager = _consoleManager ?? new DefaultScreenConsoleManager(_pages);
+            _surface = new Surface(_pages);
 
             var tick = 0;
             // Update
@@ -73,7 +74,7 @@ namespace IngameScript
                 _os.Program.GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks,
                     block => block.CustomName.Contains(ConsolePluginSetup.SURFACE_MARK));
 
-                _consoleManager.Tick(blocks);
+                _surface.Tick(blocks);
                 _os.Program.Echo.Invoke($"Console plugin tick {tick}");
                 tick++;
                 yield return null;
@@ -90,27 +91,21 @@ namespace IngameScript
                 throw new Exception("Console plugin not create");
         }
 
-        public static void RegisterPage(IUserContent page)
+        public static void RegisterPage(IConsolePage page)
         {
             ThrowIfNotCreate();
             INSTANCE._pages.Add(page);
         }
 
-        public static void UseCanvas(ConsoleManager mainScreen)
-        {
-            ThrowIfNotCreate();
-            INSTANCE._consoleManager = mainScreen;
-        }
-        
         public static void SwitchPage(string to, string onConsoleId = "")
         {
             ThrowIfNotCreate();
-            INSTANCE._consoleManager.SwitchPage(to, onConsoleId);
+            INSTANCE._surface.SwitchPage(to, onConsoleId);
         }
         public static void ShowMsg(string msg, string onConsoleId = "")
         {
             ThrowIfNotCreate();
-            INSTANCE._consoleManager.ShowMsg(msg, onConsoleId);
+            INSTANCE._surface.ShowMsg(msg, onConsoleId);
         }
     }
 }
