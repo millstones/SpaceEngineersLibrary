@@ -29,7 +29,6 @@ namespace IngameScript
             _os = new SEOS(this, GlobalConst.GRID_GROUP_STATION, GRID_NAME)
                 .AddPlugin(new TaskPlugin())
                 .AddPlugin(new ConsolePlugin())
-                .AddModule<CargoManager2>(UpdateFrequency.Update1)
                 //.AddConsoleSite(new TestConsole())
                 .Build(new DefaultLogger(this))
                 ;

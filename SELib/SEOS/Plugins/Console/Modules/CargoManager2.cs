@@ -1,23 +1,26 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
-using IngameScript.New;
 using Sandbox.ModAPI.Ingame;
-using VRage;
-using VRage.Game.ModAPI.Ingame;
 using VRageMath;
+// ReSharper disable SpecifyACultureInStringConversionExplicitly
 
 namespace IngameScript
 {
-    class CargoManager2 : Module, IConsolePage
+    class CargoManager2 : Module, IPageProvider
     {
         //public override Func<IMyTerminalBlock, bool> BlockFilter => b => b.GetType() == typeof(IMyCargoContainer);
         List<IMyCargoContainer> _cargos;
-        public Page Page => new CargoManagerPage("Cargo manager", this);
+        public Page Page { get; private set; }
 
         public override void Awake(IEnumerable<IMyTerminalBlock> blocks)
         {
             _cargos = blocks.OfType<IMyCargoContainer>().ToList();
+            
+            Page = new CargoManagerPage("Cargo manager", this);
         }
+
 
         public override void Tick(double dt, IEnumerable<IMyTerminalBlock> blocks)
         {
@@ -34,12 +37,32 @@ namespace IngameScript
             {
                 _cargoManager = cargoManager;
                 _cargoAll = new ReactiveProperty<double>(_cargoManager._cargos.InventoryPercent);
+                
+                var pbCargoWithText1 = new Text(() => _cargoManager._cargos.InventoryPercent().ToString(), click:
+                    console =>
+                    {
+                        dock.Add(pbCargoWithText2);
+                    });
+                //var pbCargoWithText2 = new Text(() => DateTime.Now.ToLongTimeString());
+                var pbCargoWithText3 = new Text(ConsolePluginSetup.LOGO);
 
+                dock = new SizableRow()
+                        .Add(pbCargoWithText1)
+                        .Add(pbCargoWithText2)
+                        .Add(pbCargoWithText3)
+                    ;
+                Add(dock, new RectangleF(new Vector2(0.25f, 0.1f), Vector2.One * 0.5f));
 
-                var pbCargoWithText = new Text(_cargoManager._cargos.InventoryPercent().ToString);
-
-                Add(pbCargoWithText, Vector2.Zero, Vector2.One);
+                pbCargoWithText1.BackgroundVisible = true;
+                pbCargoWithText1.BorderVisible = true;
+                
+                //Add(pbCargoWithText1, CreateArea(Vector2.Zero, Vector2.One*0.8f)); 
+                Add(pbCargoWithText1, CreateArea(new Vector2(0, 0.5f), new Vector2(0.5f, 1))); 
+                // Add(pbCargoWithText3, CreateArea(Vector2.One*0.5f, Vector2.One)); 
             }
+
+            Text pbCargoWithText2 => new Text(() => DateTime.Now.ToLongTimeString());
+            SizableRow dock;
 
             NoteLevel GetNoteLevel()
             {

@@ -2,14 +2,16 @@
 using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
-namespace IngameScript.New
+namespace IngameScript
 {
     interface IInteractive
     {
-        void OnClick(IConsole console);
+        //bool IsMultipleClickSupport { get; }
+        void OnSelect(IConsole console, double power);
+        void OnInput(IConsole console, Vector3 dir);
         void OnHoverEnable(bool hover);
     }
-    interface IConsolePage
+    interface IPageProvider
     {
         Page Page { get; }
     }
@@ -20,14 +22,14 @@ namespace IngameScript.New
         void ShowMessageBox(string msg);
         void ShowMessageBox(MessageBox msg);
     }
-    interface IDrawSurface
+    interface ISurfaceDrawer
     {
         RectangleF Viewport { get; }
         Vector2 GridStep { get; }
         Vector2 ArrowPosition { get; }
         string FontId { get; }
         float FontScale { get; }
-        void AddFrameSprites(List<MySprite> sprites);
+        ConsoleStyle Style { get; }
         Vector2 MeasureText(string txt, string fontId, float scale);
     }
 }

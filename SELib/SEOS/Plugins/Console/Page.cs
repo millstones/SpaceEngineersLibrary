@@ -1,9 +1,9 @@
 ﻿using System;
 using VRageMath;
 
-namespace IngameScript.New
+namespace IngameScript
 {
-    abstract class Page : Grid
+    abstract class Page : FreeCanvas
     {
         public string Id;
         public string Title = ConsolePluginSetup.LOGO;
@@ -19,15 +19,15 @@ namespace IngameScript.New
         public Page404(string notFoundedPageName) : base(notFoundedPageName)
         {
             Title = "Error 404";
-            Add(new Text($"Page {notFoundedPageName} NOT FOUND"), Vector2.Zero, Vector2.One);
+            Add(new Text($"Page '{notFoundedPageName}' NOT FOUND"), new RectangleF(Vector2.Zero, Vector2.One));
         }
     }
 
-    class MessageBox : DockGrid
+    class MessageBox : FreeCanvas
     {
         public MessageBox(string msg)
         {
-            Add(new Text("MSG. 'title'"), Alignment.Up);
+            Add(new Text("MSG. 'title'"));
             Add(new Text(msg));
         }
     }

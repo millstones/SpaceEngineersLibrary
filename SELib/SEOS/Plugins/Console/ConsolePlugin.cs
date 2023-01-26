@@ -1,23 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using IngameScript.New;
 using Sandbox.ModAPI.Ingame;
-using VRage.Game.GUI.TextPanel;
-using VRage.Game.VisualScripting.Utils;
-using VRageMath;
 
 namespace IngameScript
 {
     class ConsolePlugin : Plugin
     {
+        public new static ILogger Logger => INSTANCE._os.Logger;
         static ConsolePlugin INSTANCE;
         
         Surface _surface;
-        List<IConsolePage> _pages = new List<IConsolePage>();
+        List<IPageProvider> _pages = new List<IPageProvider>();
 
         SEOS _os;
         IEnumerator _updateProcess;
@@ -34,7 +28,7 @@ namespace IngameScript
 
         void AddSubmodules()
         {
-            //_os.AddModule<CargoManager>(UpdateFrequency.Update100);
+            _os.AddModule<CargoManager2>(UpdateFrequency.Update100);
         }
 
         public override void Message(string argument, UpdateType updateSource)
@@ -52,7 +46,7 @@ namespace IngameScript
             // Init
             foreach (var module in _os.Modules)
             {
-                var page = module as IConsolePage;
+                var page = module as IPageProvider;
                 if (page != null)
                     RegisterPage(page);
 
@@ -75,7 +69,7 @@ namespace IngameScript
                     block => block.CustomName.Contains(ConsolePluginSetup.SURFACE_MARK));
 
                 _surface.Tick(blocks);
-                _os.Program.Echo.Invoke($"Console plugin tick {tick}");
+                _os.Program.Echo.Invoke($"Console plugin. Last drawn sprites count:{_surface.LastDrawnSprites}");
                 tick++;
                 yield return null;
             }
@@ -91,10 +85,10 @@ namespace IngameScript
                 throw new Exception("Console plugin not create");
         }
 
-        public static void RegisterPage(IConsolePage page)
+        public static void RegisterPage(IPageProvider pageProvider)
         {
             ThrowIfNotCreate();
-            INSTANCE._pages.Add(page);
+            INSTANCE._pages.Add(pageProvider);
         }
 
         public static void SwitchPage(string to, string onConsoleId = "")

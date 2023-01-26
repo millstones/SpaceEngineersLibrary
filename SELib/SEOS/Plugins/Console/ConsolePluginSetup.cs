@@ -20,9 +20,10 @@ namespace IngameScript
         public const string SURFACE_CONTROLLER_SWITCH_CTRL_MARK = "_switch_ctrl";
         public const string SURFACE_CONTROLLER_UP_CTRL_MARK = "_up_ctrl";
         public const string SURFACE_CONTROLLER_DOWN_CTRL_MARK = "_down_ctrl";
-        public const string SURFACE_CONTROLLER_SWITCH_SELECT_CTRL_MARK = "_switch_select_ctrl";
-
-        //public const string MAIN_PAGE_ID = "sys-page";
+        public const string SURFACE_CONTROLLER_RIGHT_CTRL_MARK = "_right_ctrl";
+        public const string SURFACE_CONTROLLER_LEFT_CTRL_MARK = "_left_ctrl";
+        public const string SURFACE_CONTROLLER_SELECT_CTRL_MARK = "_select_ctrl";
+        public const string SURFACE_CONTROLLER_DESELECT_CTRL_MARK = "deselect_ctrl";
     }
 
     enum Alignment

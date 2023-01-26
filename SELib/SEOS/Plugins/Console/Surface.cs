@@ -7,15 +7,17 @@ using Sandbox.ModAPI.Ingame;
 using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
-namespace IngameScript.New
+namespace IngameScript
 {
     class Surface
     {
-        IEnumerable<IConsolePage> _pages;
+        IEnumerable<Page> _pages;
         Repository<long, IMyCockpit> _inputs = new Repository<long, IMyCockpit>();
-        Repository<long, SurfaceView> _consoles = new Repository<long, SurfaceView>();
+        Repository<long, SurfaceDrawerView> _consoles = new Repository<long, SurfaceDrawerView>();
 
-        class SurfaceView : IConsole, IDrawSurface
+        public int LastDrawnSprites => _consoles.Values.Sum(x => x.LastDrawSprites);
+
+        class SurfaceDrawerView : IConsole, ISurfaceDrawer
         {
             public RectangleF Viewport { get; }
             public Vector2 GridStep { get; }
@@ -23,47 +25,45 @@ namespace IngameScript.New
             public Vector2 ArrowPosition => _input?.ArrowPos(Viewport) ?? Vector2.PositiveInfinity;
             public string FontId => _panel.Font;
             public float FontScale => _panel.FontSize;
+            public ConsoleStyle Style { get; } = ConsoleStyle.MischieviousGreen;
 
 
             public string ConsoleId;
+            public int LastDrawSprites;
+            
             Surface _surface;
             IMyTextSurface _panel;
-            Page _currentPage;
-            MessageBox _currentMsgBox;
+            PageItem _currentPage;
+            PageItem _currentMsgBox;
 
             Input _input;
             IInteractive _lastInteractive;
+            RectangleF msgBoxViewport;
 
-            public SurfaceView(Surface surface, IMyTextSurface panel, string consoleId, Page startPage)
+            public SurfaceDrawerView(Surface surface, IMyTextSurface panel, string consoleId, Page startPage)
             {
                 ConsoleId = consoleId;
                 _surface = surface;
                 _panel = panel;
-                _currentPage = startPage;
 
                 Viewport = SetupSurface();
                 GridStep = MeasureText(" ", FontId, FontScale);
+                msgBoxViewport = new RectangleF(Viewport.Position + Viewport.Size / 20, Viewport.Size - Viewport.Size / 10);
+                SwitchPage(startPage);
             }
 
             RectangleF SetupSurface()
             {
                 _panel.ContentType = ContentType.SCRIPT;
                 _panel.Script = "";
-                _panel.ScriptBackgroundColor = Color.Black; //_layout.Style.SecondColor;
+                _panel.ScriptBackgroundColor = Color.Darken(Style.FirstColor, 0.2); //_layout.Style.SecondColor;
                 _panel.ScriptForegroundColor = Color.Black;
 
                 var retVal = new RectangleF((_panel.TextureSize - _panel.SurfaceSize) / 2f, _panel.SurfaceSize);
-                retVal = new RectangleF(retVal.Position + ConsolePluginSetup.SCREEN_BORDER_PX,
-                    retVal.Size - ConsolePluginSetup.SCREEN_BORDER_PX * 2);
+                retVal.Position += ConsolePluginSetup.SCREEN_BORDER_PX;
+                retVal.Size -= ConsolePluginSetup.SCREEN_BORDER_PX * 2;
 
                 return retVal;
-            }
-
-            List<MySprite> _frameSprites = new List<MySprite>();
-
-            public void AddFrameSprites(List<MySprite> sprites)
-            {
-                _frameSprites.AddRange(sprites);
             }
 
             public Vector2 MeasureText(string txt, string fontId, float scale)=>
@@ -76,7 +76,8 @@ namespace IngameScript.New
 
             public void SwitchPage(Page page)
             {
-                _currentPage = page;
+                //_currentPage?.Dispose();
+                _currentPage = page; //.GetDrawer(this, Viewport);
             }
 
             DateTime _msgAutoCloseTime;
@@ -95,24 +96,23 @@ namespace IngameScript.New
             public void Draw()
             {
                 var viewport = Viewport;
-                var msgBoxViewport = new RectangleF(viewport.Position + Viewport.Size / 20,
-                    viewport.Size - Viewport.Size / 10);
-
-                _currentPage.Draw(this, ref viewport);
-
 
                 IInteractive interactive = null;
                 using (var frame = _panel.DrawFrame())
                 {
-                    var spriteList = new List<MySprite>();
+                    var sprites = new List<MySprite>();
 
-                    _currentPage.Draw(this, ref viewport);
-                    _currentMsgBox.Draw(this, ref msgBoxViewport);
+                    _currentPage.Draw(this, ref viewport, ref sprites, ref interactive);
+                    _currentMsgBox?.Draw(this, ref msgBoxViewport, ref sprites, ref interactive);
 
                     if (_input != null && _input.IsEnableControl)
-                        DrawArrow(ref spriteList);
+                        DrawArrow(ref sprites);
 
-                    frame.AddRange(spriteList);
+                    frame.Clip((int) viewport.Position.X, (int) viewport.Position.Y, (int) viewport.Width,
+                        (int) viewport.Height);
+                    frame.AddRange(sprites);
+
+                    LastDrawSprites = sprites.Count;
                 }
 
                 if (_lastInteractive == interactive) return;
@@ -120,6 +120,7 @@ namespace IngameScript.New
                 _lastInteractive?.OnHoverEnable(false);
                 _lastInteractive = interactive;
                 _lastInteractive?.OnHoverEnable(true);
+                
             }
 
             void DrawArrow(ref List<MySprite> sprites)
@@ -137,8 +138,8 @@ namespace IngameScript.New
                         Type = SpriteType.TEXTURE,
                         Data = "Triangle",
                         Position = ArrowPosition,
-                        Size = new Vector2(8, 12),
-                        Color = Color.Lighten(Color.White, 0.8), //hsv.HSVtoColor(),
+                        Size = new Vector2(6, 9),
+                        Color = Color.Lighten(Style.FirstColor, 0.8), //hsv.HSVtoColor(),
                         RotationOrScale = -(float) Math.PI / 3f
                     }
                 );
@@ -147,8 +148,11 @@ namespace IngameScript.New
             public void Tick()
             {
                 _input?.Tick();
-                if (DateTime.Now > _msgAutoCloseTime) _currentMsgBox = null;
-
+                if (DateTime.Now > _msgAutoCloseTime)
+                {
+                    //_currentMsgBox?.Dispose();
+                    _currentMsgBox = null;
+                }
             }
 
             public void Message(string msg)
@@ -163,30 +167,42 @@ namespace IngameScript.New
                 if (controller == null) return;
                 if (_input == null || _input.Cockpit != controller)
                 {
-                    _input = new Input(controller, this)
+                    _input = new Input(controller, ConsoleId)
                     {
-                        OnClick = args => { _lastInteractive?.OnClick(args.Surface); }
+                        OnSelect = args =>
+                        {
+                            _lastInteractive?.OnSelect(this, args.Power);
+                        },
+                        OnInput = args =>
+                        {
+                            _lastInteractive?.OnInput(this, args.Dir);
+                        }
                     };
                 }
             }
         }
 
-        struct ArrowClickEventArgs
+        struct SelectEventArgs
         {
-            public SurfaceView Surface;
+            public double Power;
+        }
+        struct InputMoveEventArgs
+        {
+            public Vector3 Dir;
         }
 
         class Input : IDisposable
         {
             public IMyCockpit Cockpit;
             public bool IsEnableControl;
-            public Action<ArrowClickEventArgs> OnClick;
-            SurfaceView _mySurface;
+            public Action<SelectEventArgs> OnSelect;
+            public Action<InputMoveEventArgs> OnInput;
+            string _consoleId;
 
-            public Input(IMyCockpit cockpit, SurfaceView mySurface)
+            public Input(IMyCockpit cockpit, string consoleId)
             {
                 Cockpit = cockpit;
-                _mySurface = mySurface;
+                _consoleId = consoleId;
             }
 
             void SwitchControl()
@@ -194,32 +210,25 @@ namespace IngameScript.New
                 IsEnableControl = !IsEnableControl;
             }
 
-            void UpStep()
+            void InputMove(Vector3 dir)
             {
-                _arrowPos += Vector2.UnitY * 10;
-            }
-
-            void DownStep()
-            {
-                _arrowPos -= Vector2.UnitY * 10;
-            }
-
-            void SwitchSelect()
-            {
-
-            }
-
-            void Select()
-            {
-                OnClick?.Invoke(new ArrowClickEventArgs
+                OnInput?.Invoke(new InputMoveEventArgs
                 {
-                    Surface = _mySurface
+                    Dir = dir
+                });
+                _arrowPos += 10 * new Vector2(dir.X, dir.Z);
+            }
+            void Select(double val = 1)
+            {
+                OnSelect?.Invoke(new SelectEventArgs
+                {
+                    Power = val
                 });
             }
 
-            void Deselect()
+            void Deselect(double val = -1)
             {
-
+                Select(val);
             }
 
             Vector2 _arrowPos;
@@ -238,42 +247,44 @@ namespace IngameScript.New
                 }
 
                 if (!IsEnableControl) return;
-
-                {
-                    var ri = Cockpit.RotationIndicator;
-                    var delta = new Vector2(ri.Y, ri.X);
-                    _arrowPos += delta * ConsolePluginSetup.MOUSE_SENSITIVITY;
-                }
-                {
-                    var ri = Cockpit.RollIndicator;
-                    if (ri > 0.3) Select();
-                    if (ri < -0.3) Deselect();
-                }
-                {
-                    var mi = Cockpit.MoveIndicator;
-                    if (mi.Z > 0.3) UpStep();
-                    if (mi.Z < -0.3) DownStep();
-                }
+                
+                var ri = Cockpit.RotationIndicator;
+                var delta = new Vector2(ri.Y, ri.X);
+                _arrowPos += delta * ConsolePluginSetup.MOUSE_SENSITIVITY;
+                Select(Cockpit.RollIndicator);
+                InputMove(Cockpit.MoveIndicator);
             }
 
             public void Message(string argument)
             {
-                var prefix = _mySurface.ConsoleId;
+                var prefix = _consoleId;
                 if (argument == prefix + ConsolePluginSetup.SURFACE_CONTROLLER_SWITCH_CTRL_MARK)
                 {
                     SwitchControl();
                 }
                 else if (argument == prefix + ConsolePluginSetup.SURFACE_CONTROLLER_UP_CTRL_MARK)
                 {
-                    UpStep();
+                    InputMove(new Vector3(0, 1, 0));
                 }
                 else if (argument == prefix + ConsolePluginSetup.SURFACE_CONTROLLER_DOWN_CTRL_MARK)
                 {
-                    DownStep();
+                    InputMove(new Vector3(0, -1, 0));
                 }
-                else if (argument == prefix + ConsolePluginSetup.SURFACE_CONTROLLER_SWITCH_SELECT_CTRL_MARK)
+                else if (argument == prefix + ConsolePluginSetup.SURFACE_CONTROLLER_RIGHT_CTRL_MARK)
                 {
-                    SwitchSelect();
+                    InputMove(new Vector3(1, 0, 0));
+                }
+                else if (argument == prefix + ConsolePluginSetup.SURFACE_CONTROLLER_LEFT_CTRL_MARK)
+                {
+                    InputMove(new Vector3(-1, 0, 0));
+                }
+                else if (argument == prefix + ConsolePluginSetup.SURFACE_CONTROLLER_SELECT_CTRL_MARK)
+                {
+                    Select();
+                }
+                else if (argument == prefix + ConsolePluginSetup.SURFACE_CONTROLLER_DESELECT_CTRL_MARK)
+                {
+                    Deselect();
                 }
             }
 
@@ -282,9 +293,9 @@ namespace IngameScript.New
             }
         }
 
-        public Surface(IEnumerable<IConsolePage> pages)
+        public Surface(IEnumerable<IPageProvider> pages)
         {
-            _pages = pages;
+            _pages = pages.Select(x=> x.Page);
         }
 
         IEnumerator _updateBlocksProcess, _drawProcess;
@@ -383,8 +394,11 @@ namespace IngameScript.New
                 ids.Add(id);
                 if (!_consoles.Contains(id))
                 {
+                    var startPage = string.IsNullOrEmpty(lcdResult.StartPageNameId)
+                        ? _pages.First()
+                        : GetPage(lcdResult.StartPageNameId);
                     _consoles.Add(id,
-                        new SurfaceView(this, surface, lcdResult.SurfaceNameId, GetPage(lcdResult.StartPageNameId)));
+                        new SurfaceDrawerView(this, surface, lcdResult.SurfaceNameId, startPage));
                 }
 
                 yield return (float) i / myTerminalBlocks.Length;
@@ -454,7 +468,7 @@ namespace IngameScript.New
 
         Page GetPage(string id)
         {
-            return _pages.FirstOrDefault(x => x.Page.Id == id)?.Page
+            return _pages.FirstOrDefault(x => x.Id == id)
                    ?? new Page404(id);
         }
 

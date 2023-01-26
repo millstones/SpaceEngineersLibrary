@@ -69,7 +69,7 @@ namespace IngameScript
                 enumerators.Remove(i);
             }
 
-            Logger.Log($"Task plugin: 'Tick tasks. Count= {enumerators.Count}'");
+            Logger.Log($"Task plugin: 'Running {enumerators.Count} tasks.'");
         }
 
         static void ThrowIfNotCreate()

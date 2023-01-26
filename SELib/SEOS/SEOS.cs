@@ -124,6 +124,8 @@ namespace IngameScript
 
         public void Tick()
         {
+            PrintInfo();
+            
             var dateTime = DateTime.Now;
             var dt = (dateTime - lastTick).TotalSeconds;
             try
@@ -137,6 +139,48 @@ namespace IngameScript
                 Program.Runtime.UpdateFrequency = UpdateFrequency.None;
             }
             lastTick = dateTime;
+        }
+
+        Queue<double> _cpLoad = new Queue<double>();
+        Queue<double> _ramLoad = new Queue<double>();
+        double _cpMax, _ramMax;
+        int i;
+        void PrintInfo()
+        {
+            const int awaitTicks = 100;
+            if (i < awaitTicks)
+            {
+                i++;
+                return;
+            }
+            var rt = Program.Runtime;
+            var cp = 0.01 * rt.LastRunTimeMs / ((float) 1 / 48);
+            var ram = (double) rt.CurrentInstructionCount / rt.MaxInstructionCount;
+            cp = double.IsInfinity(cp) || double.IsNaN(cp) ? 0 : cp;
+            ram = double.IsInfinity(ram) || double.IsNaN(ram) ? 0 : ram;
+            _cpLoad.Enqueue(cp);
+            _ramLoad.Enqueue(ram);
+
+            if (_cpLoad.Count <= awaitTicks) return;
+            
+            var cpAvg = _cpLoad.Average();
+            var ramAvg = _ramLoad.Average();
+            if (i < 5 * awaitTicks) i++;
+            else
+            {
+                _cpMax = Math.Max(cpAvg, _cpMax);
+                _ramMax = Math.Max(ramAvg, _ramMax);
+            }
+                
+            _cpLoad.Dequeue();
+            _ramLoad.Dequeue();
+                
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"GUZUN OS <Plugins: {Plugins.Count} Modules: {Modules.Count}>");
+            sb.AppendLine($"PRC load: AWG:{cpAvg:P0} MAX:{_cpMax:P0}");
+            sb.AppendLine($"RAM load: AWG:{ramAvg:P0} MAX:{_ramMax:P0}");
+            Program.Echo(sb.ToString());
         }
 
         public void Message(string argument, UpdateType updateSource)
@@ -233,6 +277,7 @@ namespace IngameScript
 
     public interface ILogger
     {
+        DebugAPI Debug { get; }
         void Log(string msg);
         void Log(NoteLevel msgType, string msg);
         void Log(Exception e);
@@ -243,7 +288,7 @@ namespace IngameScript
         const int MAX_LINES = 100;
         IMyTerminalBlock _logStorage;
         Action<string> _echo;
-        public readonly DebugAPI Debug;
+        public DebugAPI Debug { get; }
 
         int _counter;
         public DefaultLogger(MyGridProgram prg)
