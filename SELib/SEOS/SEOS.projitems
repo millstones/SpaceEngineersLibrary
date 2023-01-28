@@ -33,14 +33,16 @@
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ConsolePlugin.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ConsolePluginSetup.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\ConsolePluginExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\DockContainer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Grid.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Interfaces.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Modules\EnergyManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\OverviewItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Page.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\PageItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Surface.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Modules\CargoManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Modules\CargoManager2.cs" />
-    <Folder Include="$(MSBuildThisFileDirectory)Plugins\Console\New" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Tasks\CancellationToken.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Tasks\Task.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Tasks\TaskBase.cs" />

@@ -80,7 +80,7 @@ namespace IngameScript
                     .AppendLine(x)
                     .AppendLine(y)
                     .AppendLine(z)
-                    .AppendLine($"Cargo: {_cargo.InventoryPercent():P}")
+                    .AppendLine($"Cargo: {_cargo.EmployedPercent():P}")
                 );
             })
                 .Run();
@@ -167,12 +167,12 @@ namespace IngameScript
             var step = ToPoint(to, false);
             while (step.MoveNext())
             {
-                if (_cargo.InventoryPercent() > 0.99)
+                if (_cargo.EmployedPercent() > 0.99)
                 {
                     _drills.Enable(false);
-                    while (_cargo.InventoryPercent() > 0.8)
+                    while (_cargo.EmployedPercent() > 0.8)
                     {
-                        _info.WriteText($"Cargo is FULL {_cargo.InventoryPercent():P}. Await", true);
+                        _info.WriteText($"Cargo is FULL {_cargo.EmployedPercent():P}. Await", true);
                         yield return step.Current;
                     }
                     _drills.Enable(true);

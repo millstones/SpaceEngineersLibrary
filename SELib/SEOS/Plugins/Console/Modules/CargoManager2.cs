@@ -18,7 +18,7 @@ namespace IngameScript
         {
             _cargos = blocks.OfType<IMyCargoContainer>().ToList();
             
-            Page = new CargoManagerPage("Cargo manager", this);
+            Page = new CargoManagerPage(this);
         }
 
 
@@ -30,45 +30,43 @@ namespace IngameScript
 
         class CargoManagerPage : Page
         {
-            CargoManager2 _cargoManager;
-            ReactiveProperty<double> _cargoAll;
+            public PageItem LeftPanel, RightPanel;
 
-            public CargoManagerPage(string nameId, CargoManager2 cargoManager) : base(nameId)
+            public CargoManagerPage(CargoManager2 cargoManager) : base("Cargo storage manager")
             {
-                _cargoManager = cargoManager;
-                _cargoAll = new ReactiveProperty<double>(_cargoManager._cargos.InventoryPercent);
-                
-                var pbCargoWithText1 = new Text(() => _cargoManager._cargos.InventoryPercent().ToString(), click:
-                    console =>
-                    {
-                        dock.Add(pbCargoWithText2);
-                    });
-                //var pbCargoWithText2 = new Text(() => DateTime.Now.ToLongTimeString());
-                var pbCargoWithText3 = new Text(ConsolePluginSetup.LOGO);
+                Title = Id;
 
-                dock = new SizableRow()
-                        .Add(pbCargoWithText1)
-                        .Add(pbCargoWithText2)
-                        .Add(pbCargoWithText3)
+                RightPanel = new Menu(0.5f)
+                        .Add("Pages list:", console => { console.ShowMessageBox("CLICK"); })
+                        .Add("Details", console => { })
+                        .Add("Requests", console => { })
+                        .Add("Limits", console => { })
                     ;
-                Add(dock, new RectangleF(new Vector2(0.25f, 0.1f), Vector2.One * 0.5f));
+                var cargo = cargoManager._cargos;
+                LeftPanel = new FlexiblePanel<PageItem>(true)
+                        .Add(new StackPanel<PageItem>(true)
+                            .Add(new InfoLine("TOTAL VOLUME:", () => cargo.TotalVolume(), "m^3"))
+                            .Add(new InfoLine("EMPLOYED VOLUME:", () => cargo.EmployedVolume(), "m^3"))
+                            .Add(new InfoLine("EMPLOYED MASS:", () => cargo.EmployedMass(), "kg"))
+                            .Add(new InfoLine("FREE SPACE:",
+                                () => cargo.TotalVolume() - cargo.EmployedVolume(),
+                                "m^3")))
 
-                pbCargoWithText1.BackgroundVisible = true;
-                pbCargoWithText1.BorderVisible = true;
-                
-                //Add(pbCargoWithText1, CreateArea(Vector2.Zero, Vector2.One*0.8f)); 
-                Add(pbCargoWithText1, CreateArea(new Vector2(0, 0.5f), new Vector2(0.5f, 1))); 
-                // Add(pbCargoWithText3, CreateArea(Vector2.One*0.5f, Vector2.One)); 
+                        .Add(new ProgressBar(cargo.EmployedPercent) {Margin = new Vector4(10), Border = true})
+                    ;
+
+                Add(LeftPanel, CreateArea(new Vector2(0, 0.1f), new Vector2(0.5f, 1)));
+                Add(RightPanel, CreateArea(new Vector2(0.5f, 0.1f), Vector2.One));
             }
 
-            Text pbCargoWithText2 => new Text(() => DateTime.Now.ToLongTimeString());
-            SizableRow dock;
-
-            NoteLevel GetNoteLevel()
+            class InfoLine : FlexiblePanel<Text>
             {
-                var cargoAmount = _cargoAll.Get();
-                if (cargoAmount > 0.1f && cargoAmount < 0.65f) return NoteLevel.None;
-                return NoteLevel.Waring;
+                public InfoLine(string txt1, Func<double> val, string txt2)
+                {
+                    Add(new Text(txt1, 0.5f) {Alignment = Alignment.Left}, 5);
+                    Add(new Text(val().ToStringPostfix(), 0.5f) {Border = true, Alignment = Alignment.Center}, 3);
+                    Add(new Text(txt2, 0.5f) {Alignment = Alignment.Right}, 2);
+                }
             }
         }
 

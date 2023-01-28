@@ -28,7 +28,8 @@ namespace IngameScript
 
         void AddSubmodules()
         {
-            _os.AddModule<CargoManager2>(UpdateFrequency.Update100);
+            _os.AddModule<CargoManager2>(UpdateFrequency.Update10);
+            _os.AddModule<EnergyManager>(UpdateFrequency.Update10);
         }
 
         public override void Message(string argument, UpdateType updateSource)

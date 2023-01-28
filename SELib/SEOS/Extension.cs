@@ -23,11 +23,18 @@ namespace IngameScript
                 log10 -= 3;
             var log1000 = Math.Max(-8, Math.Min(log10 / 3, 8));
 
-            return (val / Math.Pow(10, log1000 * 3)).ToString("###.#" + prefixeSI[log1000+8]);
+            var pref = prefixeSI[log1000 + 8];
+            pref = string.IsNullOrEmpty(pref) ? "" : $" [{pref}]";
+            return (val / Math.Pow(10, log1000 * 3)).ToString("###.#" + pref);
 
         }
 
         public static string ToStringPostfix(this long val)=> ((double) val).ToStringPostfix();
+        public static string ToStringPostfix(this float val)=> ((double) val).ToStringPostfix();
+        public static string ToStringPostfix(this int val)=> ((double) val).ToStringPostfix();
+
+        public static Color Invert(this Color color) =>
+            Color.FromNonPremultiplied(0xFF - color.R, 0xFF - color.G, 0xFF - color.B, color.A);
 
         #region MathHelper
 
@@ -220,12 +227,16 @@ namespace IngameScript
             controller.World2BodyDirection(controller.GetTotalGravity());
         #endregion
         #region IMyEntity
-        public static double InventoryPercent(this IMyEntity entity)
+        public static double EmployedPercent(this IMyEntity entity)
         {
             var invent = entity.GetInventory();
             return invent.CurrentVolume.RawValue / invent.MaxVolume.RawValue;
         }
-        public static double InventoryPercent(this IEnumerable<IMyEntity> entity)
+
+        public static double TotalVolume(this IMyEntity entity) => entity.GetInventory().MaxVolume.RawValue;
+        public static double EmployedVolume(this IMyEntity entity) => entity.GetInventory().CurrentVolume.RawValue;
+        public static double EmployedMass(this IMyEntity entity) => entity.GetInventory().CurrentMass.RawValue;
+        public static double EmployedPercent(this IEnumerable<IMyEntity> entity)
         {
             var myEntities = entity.ToList();
             var c = 0.0;
@@ -238,6 +249,10 @@ namespace IngameScript
             }
             return c / m;
         }
+
+        public static double TotalVolume(this IEnumerable<IMyEntity> entity) => entity.Sum(x => x.TotalVolume());
+        public static double EmployedVolume(this IEnumerable<IMyEntity> entity) => entity.Sum(x => x.EmployedVolume());
+        public static double EmployedMass(this IEnumerable<IMyEntity> entity) => entity.Sum(x => x.EmployedMass());
 
         #endregion
         #region IMyPistonBase

@@ -18,7 +18,7 @@ namespace IngameScript
         public static Task TriggerIsInventoryFull(this IMyEntity entity) =>
             Task.Trigger(() => entity.GetInventory().IsFull);
         public static Task<double> TriggerInventoryPercent(this IMyEntity entity) =>
-            Task.ValueChanged(entity, (_) => entity.InventoryPercent());
+            Task.ValueChanged(entity, (_) => entity.EmployedPercent());
         #endregion
         #region IMyCubeBlock
         public static Task TriggerIsBeingHacked(this IMyCubeBlock block) =>

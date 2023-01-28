@@ -13,12 +13,93 @@ namespace IngameScript
     {
         IEnumerable<Page> _pages;
         Repository<long, IMyCockpit> _inputs = new Repository<long, IMyCockpit>();
-        Repository<long, SurfaceDrawerView> _consoles = new Repository<long, SurfaceDrawerView>();
+        Repository<long, Drawer> _consoles = new Repository<long, Drawer>();
 
         public int LastDrawnSprites => _consoles.Values.Sum(x => x.LastDrawSprites);
 
-        class SurfaceDrawerView : IConsole, ISurfaceDrawer
+        class Drawer : IConsole, ISurfaceDrawer
         {
+            class SysCanvas : FreeCanvas
+            {
+                Drawer _drawer;
+                DateTime _msgAutoCloseTime;
+
+                Page _currentPage;
+                PageItem _currentMsgBox;
+                public SysCanvas(Drawer drawer, Page startPage)
+                {
+                    _drawer = drawer;
+                    _currentPage = startPage;
+                    Background = false;
+
+                    Add(new FlexiblePanel<PageItem>()
+                        .Add(new Text("SETUP"))
+                        .Add(new MenuOverview("PAGES")
+                            .Add("item 1", console => { console.ShowMessageBox("item 1"); })
+                            .Add("item 2", console => { console.ShowMessageBox("item 2"); })
+                            .Add("item 3", console => { console.ShowMessageBox("item 3"); })
+                            .Add("item 4", console => { console.ShowMessageBox("item 4"); })
+                        )
+                        .Add(new Text("STORAGE"))
+                        .Add(new Text("ENERGY"))
+                        .Add(new Text(()=> DateTime.Now.ToLongTimeString())),
+                        CreateArea(Vector2.Zero, new Vector2(1, 0.05f))
+                    );
+                    Add(_currentPage, CreateArea(new Vector2(0, 0.05f), new Vector2(1, 0.95f)));
+                    Add(new Text("page-navigation"), CreateArea(new Vector2(0, 0.95f), Vector2.One));
+                }
+
+                protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites,
+                    ref IInteractive interactive)
+                {
+                    Visible = true;
+                    Enabled = _currentMsgBox == null;
+                    
+                    base.OnDraw(drawer, ref viewport, ref sprites, ref interactive);
+
+                    if (DateTime.Now > _msgAutoCloseTime)
+                    {
+                        CloseMessageBox();
+                    }
+                    else
+                    {
+                        var msbVpt = drawer.Viewport;
+                        msbVpt.Position += msbVpt.Size * 0.25f/2;
+                        msbVpt.Size *= 0.75f;
+                        _currentMsgBox?.Draw(drawer, ref msbVpt, ref sprites, ref interactive);
+                    }
+                }
+
+                public void ShowMessageBox(string msg)
+                {
+                    ShowMessageBox(new MessageBox(msg));
+                }
+
+                public void ShowMessageBox(MessageBox msg)
+                {
+                    CloseMessageBox();
+
+                    _msgAutoCloseTime = DateTime.Now + TimeSpan.FromSeconds(ConsolePluginSetup.MSG_SHOW_TIME_SEC);
+                    _currentMsgBox = msg;
+                    _drawer._lastInteractive?.OnHoverEnable(false);
+                    _drawer._lastInteractive = null;
+                }
+
+                public void CloseMessageBox()
+                {
+                    _currentMsgBox = null;
+                }
+                public void SwitchPage(string id)
+                {
+                    SwitchPage(_drawer._surface.GetPage(id));
+                }
+
+                public void SwitchPage(Page page)
+                {
+                    //_currentPage?.Dispose();
+                    _currentPage = page; //.GetDrawer(this, Viewport);
+                }
+            }
             public RectangleF Viewport { get; }
             public Vector2 GridStep { get; }
 
@@ -27,20 +108,17 @@ namespace IngameScript
             public float FontScale => _panel.FontSize;
             public ConsoleStyle Style { get; } = ConsoleStyle.MischieviousGreen;
 
-
             public string ConsoleId;
             public int LastDrawSprites;
             
             Surface _surface;
             IMyTextSurface _panel;
-            PageItem _currentPage;
-            PageItem _currentMsgBox;
 
             Input _input;
             IInteractive _lastInteractive;
-            RectangleF msgBoxViewport;
+            SysCanvas _sysCanvas;
 
-            public SurfaceDrawerView(Surface surface, IMyTextSurface panel, string consoleId, Page startPage)
+            public Drawer(Surface surface, IMyTextSurface panel, string consoleId, Page startPage)
             {
                 ConsoleId = consoleId;
                 _surface = surface;
@@ -48,8 +126,8 @@ namespace IngameScript
 
                 Viewport = SetupSurface();
                 GridStep = MeasureText(" ", FontId, FontScale);
-                msgBoxViewport = new RectangleF(Viewport.Position + Viewport.Size / 20, Viewport.Size - Viewport.Size / 10);
-                SwitchPage(startPage);
+                
+                _sysCanvas = new SysCanvas(this, startPage);
             }
 
             RectangleF SetupSurface()
@@ -69,29 +147,11 @@ namespace IngameScript
             public Vector2 MeasureText(string txt, string fontId, float scale)=>
                 _panel.MeasureStringInPixels(new StringBuilder(txt), fontId, scale);
 
-            public void SwitchPage(string id)
-            {
-                SwitchPage(_surface.GetPage(id));
-            }
-
-            public void SwitchPage(Page page)
-            {
-                //_currentPage?.Dispose();
-                _currentPage = page; //.GetDrawer(this, Viewport);
-            }
-
-            DateTime _msgAutoCloseTime;
-
-            public void ShowMessageBox(string msg)
-            {
-                ShowMessageBox(new MessageBox(msg));
-            }
-
-            public void ShowMessageBox(MessageBox msg)
-            {
-                _msgAutoCloseTime = DateTime.Now + TimeSpan.FromSeconds(ConsolePluginSetup.MSG_SHOW_TIME_SEC);
-                _currentMsgBox = msg;
-            }
+            public void SwitchPage(string id) => _sysCanvas.SwitchPage(id);
+            public void SwitchPage(Page page) => _sysCanvas.SwitchPage(page);
+            
+            public void ShowMessageBox(string msg)=> _sysCanvas.ShowMessageBox(msg);
+            public void ShowMessageBox(MessageBox msg) => _sysCanvas.ShowMessageBox(msg);
 
             public void Draw()
             {
@@ -101,10 +161,12 @@ namespace IngameScript
                 using (var frame = _panel.DrawFrame())
                 {
                     var sprites = new List<MySprite>();
-
+                    
+                    _sysCanvas.Draw(this, ref viewport, ref sprites, ref interactive);
+                    /*
                     _currentPage.Draw(this, ref viewport, ref sprites, ref interactive);
                     _currentMsgBox?.Draw(this, ref msgBoxViewport, ref sprites, ref interactive);
-
+*/
                     if (_input != null && _input.IsEnableControl)
                         DrawArrow(ref sprites);
 
@@ -148,11 +210,6 @@ namespace IngameScript
             public void Tick()
             {
                 _input?.Tick();
-                if (DateTime.Now > _msgAutoCloseTime)
-                {
-                    //_currentMsgBox?.Dispose();
-                    _currentMsgBox = null;
-                }
             }
 
             public void Message(string msg)
@@ -398,7 +455,7 @@ namespace IngameScript
                         ? _pages.First()
                         : GetPage(lcdResult.StartPageNameId);
                     _consoles.Add(id,
-                        new SurfaceDrawerView(this, surface, lcdResult.SurfaceNameId, startPage));
+                        new Drawer(this, surface, lcdResult.SurfaceNameId, startPage));
                 }
 
                 yield return (float) i / myTerminalBlocks.Length;
