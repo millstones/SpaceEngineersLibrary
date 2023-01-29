@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using VRage.Game.GUI.TextPanel;
-using VRageMath;
+﻿using VRageMath;
 
 namespace IngameScript
 {
@@ -42,7 +39,7 @@ namespace IngameScript
         {
             Border = true;
             Background = true;
-            
+
             Add(new Text("'Title'"), CreateArea(Vector2.Zero, new Vector2(1, 0.15f)));
             Add(new Text(msg), CreateArea(new Vector2(0, 0.15f), Vector2.One));
         }

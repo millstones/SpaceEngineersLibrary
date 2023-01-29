@@ -11,8 +11,7 @@ namespace IngameScript
     {
         public bool Border;
         public bool Background;
-
-        public bool Visible = true;
+        
         public bool Enabled = true;
 
         // MARGIN: x-Left, y-Right, W-Up, Z-Down
@@ -20,9 +19,6 @@ namespace IngameScript
         public Alignment Alignment;
         
         protected bool Highlighting;
-
-        
-
         protected PageItem(Alignment alignment = Alignment.Center, Vector4? margin = null)
         {
             Alignment = alignment;
@@ -38,30 +34,46 @@ namespace IngameScript
             return new RectangleF(leftUpPoint, rightDownPoint - leftUpPoint);
         }
 
+        protected virtual void PreDraw(){}
+        protected virtual void PostDraw(){}
         protected abstract void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites,
             ref IInteractive interactive);
         public void Draw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites, ref IInteractive interactive)
         {
-            if (!Visible) return;
+            PreDraw();
             
             sprites.Add(MySprite.CreateClipRect(new Rectangle(
                 (int) viewport.Position.X, (int) viewport.Position.Y,
                 (int) viewport.Width, (int) viewport.Height)));
 
+            if (!Enabled)
+            {
+                DrawBackground(viewport, ref sprites, drawer.Style.FirstColor.Alpha(0.6f));
+                //sprites.Add(MySprite.CreateClearClipRect());
+                //return;
+            }
             
+            var itr = this as IInteractive;
+            interactive = Enabled && itr != null && viewport.Contains(drawer.ArrowPosition)? itr : interactive;
+
             if (Background)
             {
-                DrawBackground(viewport, ref sprites, drawer.Style.FirstColor);
-            }
+                var c = itr != null ? Color.Lighten(drawer.Style.FirstColor, 0.1) : drawer.Style.FirstColor;
+                c = Highlighting && Enabled ? Color.FromNonPremultiplied(0xFF - c.R, 0xFF - c.G, 0xFF - c.B, c.A) : c;
 
+                DrawBackground(viewport, ref sprites, c);
+            }
             
             if (Border)
                 DrawBorder(ref viewport, ref sprites, drawer.Style.ThirdColor);
 
             ToMargin(ref viewport);
             //ToStep(ref viewport, drawer.GridStep);
-            OnDraw(drawer, ref viewport, ref sprites, ref interactive);
 
+            OnDraw(drawer, ref viewport, ref sprites, ref interactive);
+            
+            PostDraw();
+            
             sprites.Add(MySprite.CreateClearClipRect());
         }
 
@@ -128,63 +140,6 @@ namespace IngameScript
         {
             sprites.Add(GetSprite("SquareSimple", viewport, color));
         }
-    }
-
-    abstract class InteractivePageItem : PageItem, IInteractive
-    {
-        protected Action<IConsole> Select;
-        protected Action Deselect;
-
-
-        protected InteractivePageItem(Action<IConsole> @select=null)
-        {
-            Select = @select;
-        }
-        public void OnSelect(IConsole console, double power)
-        {
-            if (Enabled && power > 0.7) 
-                Select.Invoke(console);
-            if (Enabled && power < -0.7)
-                OnDeselect();
-        }
-
-        public void OnInput(IConsole console, Vector3 dir)
-        {
-            
-        }
-
-        public void OnHoverEnable(bool hover)
-        {
-            if (Select == null || !Enabled) return;
-
-            Highlighting = hover;
-        }
-
-        public virtual void OnDeselect()
-        {
-            Deselect?.Invoke();
-        }
-        
-        protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites,
-            ref IInteractive interactive)
-        {
-            if (viewport.Contains(drawer.ArrowPosition))
-                interactive = this;
-            
-            if (Background)
-            {
-                DrawBackground(viewport, ref sprites,
-                    Highlighting ? drawer.Style.FirstColor.Invert() : Color.Lighten(drawer.Style.FirstColor, 0.1));
-            }
-
-            DrawInternal(drawer, ref viewport, ref sprites, ref interactive);
-            
-            if (!Enabled)
-                DrawBackground(viewport, ref sprites, Color.Black.Alpha(0.6f));
-        }
-
-        protected abstract void DrawInternal(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites,
-            ref IInteractive interactive);
     }
 
     class Text : PageItem
@@ -266,35 +221,38 @@ namespace IngameScript
             };
         }
     }
-
-    class Link : InteractivePageItem
+    class Link : PageItem, IInteractive
     {
+        Action<IConsole> _select;
         Text _text;
-        public Link(string txt, Action<IConsole> @select, float? scale = null, Color? color = null) : base(@select) 
+        public Link(string txt, Action<IConsole> @select, float? scale = null, Color? color = null)
         {
+            Border = false;
+            Background = true;
+            
+            _select = @select;
             _text = new Text(txt, scale, color);
         }
-        protected override void DrawInternal(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites, ref IInteractive interactive)
+
+        protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites, ref IInteractive interactive)
         {
             _text.Draw(drawer, ref viewport, ref sprites, ref interactive);
         }
-    }
-    class Image : PageItem
-    {
-        readonly string _texture;
-        public Color? Color;
-        public float Rotation;
 
-        public Image(string texture, int gridStepSize, float rotation = 0, Color? color=null)
+        public void OnSelect(IConsole console, double power)
         {
-            _texture = texture;
-            Rotation = rotation;
-            Color = color;
+            if (power > 0.7f)
+                _select(console);
         }
-        protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites,
-            ref IInteractive interactive)
+
+        public void OnInput(IConsole console, Vector3 dir)
         {
-            sprites.Add(GetSprite(_texture, viewport, Color, Rotation));
+
+        }
+
+        public void OnHoverEnable(bool hover)
+        {
+            Highlighting = hover;
         }
     }
     class ProgressBar : PageItem

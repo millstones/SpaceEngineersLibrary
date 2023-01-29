@@ -8,7 +8,23 @@ using VRageMath;
 
 namespace IngameScript
 {
-    class FreeCanvas : PageItem
+    abstract class PageItemContainer : PageItem, IEnumerable<PageItem>
+    {
+        public abstract IEnumerator<PageItem> GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+        
+        protected override void PreDraw()
+        {
+            foreach (var pageItem in this)
+            {
+                pageItem.Enabled = Enabled;
+            }
+        }
+    }
+    class FreeCanvas : PageItemContainer
     {
         protected Dictionary<PageItem, RectangleF> Items = new Dictionary<PageItem, RectangleF>();
 
@@ -22,13 +38,20 @@ namespace IngameScript
             Items.Remove(item);
         }
 
+        public override IEnumerator<PageItem> GetEnumerator() => Items.Select(x => x.Key).GetEnumerator();
+
+        protected override void PreDraw()
+        {
+            foreach (var pageItem in Items)
+            {
+                pageItem.Key.Enabled = Enabled;
+            }
+        }
+
         protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites, ref IInteractive interactive)
         {
             foreach (var pageItem in Items)
             {
-                pageItem.Key.Visible = Visible;
-                pageItem.Key.Enabled = Enabled;
-
                 var vpt = viewport;
                 var scale = pageItem.Value;
                 vpt.Position += scale.Position * vpt.Size;
@@ -38,7 +61,7 @@ namespace IngameScript
             }
         }
     }
-    class FlexiblePanel<T> : PageItem, IEnumerable<T> where T : PageItem
+    class FlexiblePanel<T> : PageItemContainer where T : PageItem
     {
         protected List<KeyValuePair<T, int>> Items = new List<KeyValuePair<T, int>>();
         bool _vertical;
@@ -57,20 +80,18 @@ namespace IngameScript
         {
             foreach (var item in Items)
             {
-                item.Key.Visible = Visible;
-                item.Key.Enabled = Enabled;
-
                 var vpt = GetViewport(viewport, item);
                 item.Key.Draw(drawer, ref vpt, ref sprites, ref interactive);
             }
         }
+
         RectangleF GetViewport(RectangleF parentViewport, KeyValuePair<T, int> item)
         {
-            var children = Items;//.Keys.ToList();
-            
+            var children = Items; //.Keys.ToList();
+
             var sizeNumber = item.Value;
             var sumSizeNumber = Items.Sum(x => x.Value);
-            var preNums = children.GetRange(0, children.IndexOf(item)).Sum(x=> x.Value);
+            var preNums = children.GetRange(0, children.IndexOf(item)).Sum(x => x.Value);
 
             var kSize = (float) sizeNumber / sumSizeNumber;
             var dSize = parentViewport.Size * preNums / sumSizeNumber;
@@ -86,10 +107,9 @@ namespace IngameScript
             return new RectangleF(position, size);
         }
 
-        public IEnumerator<T> GetEnumerator() => Items.Select(x=> x.Key).GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public override IEnumerator<PageItem> GetEnumerator() => Items.Select(x=> x.Key).GetEnumerator();
     }
-    class StackPanel<T> : PageItem where T : PageItem
+    class StackPanel<T> : PageItemContainer where T : PageItem
     {
         bool _vertical;
         List<KeyValuePair<T, int>> _items = new List<KeyValuePair<T, int>>();
@@ -117,12 +137,14 @@ namespace IngameScript
 
                 vpt.Size = _vertical? new Vector2(vpt.Size.X, size.Y) : new Vector2(size.X, vpt.Size.Y);
                 
-                menuItem.Key.Visible = Visible;
+                menuItem.Key.Enabled = Enabled;
                 menuItem.Key.Draw(drawer, ref vpt, ref sprites, ref interactive);
                 
                 posShift += _vertical? new Vector2(0, size.Y) : new Vector2(size.X, 0);
             }
         }
+
+        public override IEnumerator<PageItem> GetEnumerator() => _items.Select(x => x.Key).GetEnumerator();
     }
     
     class Menu : StackPanel<Link>

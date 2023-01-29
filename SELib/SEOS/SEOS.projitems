@@ -37,7 +37,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Grid.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Interfaces.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Modules\EnergyManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\OverviewItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Page.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\PageItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Surface.cs" />

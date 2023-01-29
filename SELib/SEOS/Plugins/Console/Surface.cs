@@ -25,7 +25,7 @@ namespace IngameScript
                 DateTime _msgAutoCloseTime;
 
                 Page _currentPage;
-                PageItem _currentMsgBox;
+                MessageBox _currentMsgBox;
                 public SysCanvas(Drawer drawer, Page startPage)
                 {
                     _drawer = drawer;
@@ -34,7 +34,7 @@ namespace IngameScript
 
                     Add(new FlexiblePanel<PageItem>()
                         .Add(new Text("SETUP"))
-                        .Add(new MenuOverview("PAGES")
+                        .Add(new Menu(0.5f)
                             .Add("item 1", console => { console.ShowMessageBox("item 1"); })
                             .Add("item 2", console => { console.ShowMessageBox("item 2"); })
                             .Add("item 3", console => { console.ShowMessageBox("item 3"); })
@@ -49,25 +49,24 @@ namespace IngameScript
                     Add(new Text("page-navigation"), CreateArea(new Vector2(0, 0.95f), Vector2.One));
                 }
 
+                protected override void PreDraw()
+                {
+                    if (DateTime.Now > _msgAutoCloseTime)
+                        CloseMessageBox();
+
+                    Enabled = _currentMsgBox == null;
+                    base.PreDraw();
+                }
+
                 protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites,
                     ref IInteractive interactive)
                 {
-                    Visible = true;
-                    Enabled = _currentMsgBox == null;
-                    
                     base.OnDraw(drawer, ref viewport, ref sprites, ref interactive);
-
-                    if (DateTime.Now > _msgAutoCloseTime)
-                    {
-                        CloseMessageBox();
-                    }
-                    else
-                    {
-                        var msbVpt = drawer.Viewport;
-                        msbVpt.Position += msbVpt.Size * 0.25f/2;
-                        msbVpt.Size *= 0.75f;
-                        _currentMsgBox?.Draw(drawer, ref msbVpt, ref sprites, ref interactive);
-                    }
+                    
+                    var msbVpt = drawer.Viewport;
+                    msbVpt.Position += msbVpt.Size * 0.25f/2;
+                    msbVpt.Size *= 0.75f;
+                    _currentMsgBox?.Draw(drawer, ref msbVpt, ref sprites, ref interactive);
                 }
 
                 public void ShowMessageBox(string msg)
