@@ -36,7 +36,7 @@ namespace IngameScript
             {
                 Title = Id;
 
-                RightPanel = new Menu(0.5f)
+                RightPanel = new LinkDownList(0.5f)
                         .Add("Pages list:", console => { console.ShowMessageBox("CLICK"); })
                         .Add("Details", console => { })
                         .Add("Requests", console => { })
@@ -52,7 +52,7 @@ namespace IngameScript
                                 () => cargo.TotalVolume() - cargo.EmployedVolume(),
                                 "m^3")))
 
-                        .Add(new ProgressBar(cargo.EmployedPercent) {Margin = new Vector4(10), Border = true})
+                        .Add(new ProgressBar(cargo.EmployedPercent) {Margin = new Vector4(10), Border = false})
                     ;
 
                 Add(LeftPanel, CreateArea(new Vector2(0, 0.1f), new Vector2(0.5f, 1)));

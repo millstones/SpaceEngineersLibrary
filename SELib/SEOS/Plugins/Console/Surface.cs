@@ -16,6 +16,7 @@ namespace IngameScript
         Repository<long, Drawer> _consoles = new Repository<long, Drawer>();
 
         public int LastDrawnSprites => _consoles.Values.Sum(x => x.LastDrawSprites);
+        public int DrawerCount => _consoles.Values.Count();
 
         class Drawer : IConsole, ISurfaceDrawer
         {
@@ -25,7 +26,7 @@ namespace IngameScript
                 DateTime _msgAutoCloseTime;
 
                 Page _currentPage;
-                MessageBox _currentMsgBox;
+                MessageBoxItem _currentMsgBoxItem;
                 public SysCanvas(Drawer drawer, Page startPage)
                 {
                     _drawer = drawer;
@@ -34,7 +35,7 @@ namespace IngameScript
 
                     Add(new FlexiblePanel<PageItem>()
                         .Add(new Text("SETUP"))
-                        .Add(new Menu(0.5f)
+                        .Add(new Menu("PAGES", 0.5f)
                             .Add("item 1", console => { console.ShowMessageBox("item 1"); })
                             .Add("item 2", console => { console.ShowMessageBox("item 2"); })
                             .Add("item 3", console => { console.ShowMessageBox("item 3"); })
@@ -54,7 +55,7 @@ namespace IngameScript
                     if (DateTime.Now > _msgAutoCloseTime)
                         CloseMessageBox();
 
-                    Enabled = _currentMsgBox == null;
+                    Enabled = _currentMsgBoxItem == null;
                     base.PreDraw();
                 }
 
@@ -66,27 +67,27 @@ namespace IngameScript
                     var msbVpt = drawer.Viewport;
                     msbVpt.Position += msbVpt.Size * 0.25f/2;
                     msbVpt.Size *= 0.75f;
-                    _currentMsgBox?.Draw(drawer, ref msbVpt, ref sprites, ref interactive);
+                    _currentMsgBoxItem?.Draw(drawer, ref msbVpt, ref sprites, ref interactive);
                 }
 
-                public void ShowMessageBox(string msg)
+                public void ShowMessageBox(string msg, int closeSec)
                 {
-                    ShowMessageBox(new MessageBox(msg));
+                    ShowMessageBox(new MessageBoxItem(msg), closeSec);
                 }
 
-                public void ShowMessageBox(MessageBox msg)
+                public void ShowMessageBox(MessageBoxItem msg, int closeSec)
                 {
                     CloseMessageBox();
 
-                    _msgAutoCloseTime = DateTime.Now + TimeSpan.FromSeconds(ConsolePluginSetup.MSG_SHOW_TIME_SEC);
-                    _currentMsgBox = msg;
+                    _msgAutoCloseTime = DateTime.Now + TimeSpan.FromSeconds(closeSec < 0? ConsolePluginSetup.MSG_SHOW_TIME_SEC : closeSec);
+                    _currentMsgBoxItem = msg;
                     _drawer._lastInteractive?.OnHoverEnable(false);
                     _drawer._lastInteractive = null;
                 }
 
                 public void CloseMessageBox()
                 {
-                    _currentMsgBox = null;
+                    _currentMsgBoxItem = null;
                 }
                 public void SwitchPage(string id)
                 {
@@ -148,9 +149,13 @@ namespace IngameScript
 
             public void SwitchPage(string id) => _sysCanvas.SwitchPage(id);
             public void SwitchPage(Page page) => _sysCanvas.SwitchPage(page);
-            
-            public void ShowMessageBox(string msg)=> _sysCanvas.ShowMessageBox(msg);
-            public void ShowMessageBox(MessageBox msg) => _sysCanvas.ShowMessageBox(msg);
+
+            public void ShowMessageBox(string msg, int closeSec = int.MaxValue)=> _sysCanvas.ShowMessageBox(msg, closeSec);
+            public void ShowMessageBox(MessageBoxItem msg, int closeSec = Int32.MaxValue) => _sysCanvas.ShowMessageBox(msg, closeSec);
+            public void CloseMessageBox()
+            {
+                _sysCanvas.CloseMessageBox();
+            }
 
             public void Draw()
             {
@@ -307,6 +312,7 @@ namespace IngameScript
                 var ri = Cockpit.RotationIndicator;
                 var delta = new Vector2(ri.Y, ri.X);
                 _arrowPos += delta * ConsolePluginSetup.MOUSE_SENSITIVITY;
+
                 Select(Cockpit.RollIndicator);
                 InputMove(Cockpit.MoveIndicator);
             }

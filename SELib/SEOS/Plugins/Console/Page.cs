@@ -1,4 +1,5 @@
-﻿using VRageMath;
+﻿using System;
+using VRageMath;
 
 namespace IngameScript
 {
@@ -33,15 +34,64 @@ namespace IngameScript
         }
     }
 
-    class MessageBox : FreeCanvas
+    class MessageBoxItem : FreeCanvas, IInteractive
     {
-        public MessageBox(string msg)
+        public MessageBoxItem(string msg)
         {
             Border = true;
             Background = true;
 
-            Add(new Text("'Title'"), CreateArea(Vector2.Zero, new Vector2(1, 0.15f)));
-            Add(new Text(msg), CreateArea(new Vector2(0, 0.15f), Vector2.One));
+            Add(new Text("'Title'"), CreateArea(Vector2.Zero, new Vector2(1, 0.05f)));
+            Add(new Text(msg), CreateArea(new Vector2(0, 0.05f), Vector2.One));
+            Add(new Link("X", console => console.CloseMessageBox()) {Border = true},
+                CreateArea(new Vector2(0.95f, 0), new Vector2(1, 0.05f)));
+        }
+        public MessageBoxItem(PageItem content)
+        {
+            Border = true;
+            Background = true;
+
+            Add(content);
+            Add(new Link("X", console => console.CloseMessageBox()) {Border = true},
+                CreateArea(new Vector2(0.95f, 0), new Vector2(1, 0.05f)));
+        }
+        
+        public void OnSelect(IConsole console, double power)
+        {
+            if (power < -0.7) console.CloseMessageBox();
+        }
+
+        public void OnInput(IConsole console, Vector3 dir)
+        {
+        }
+
+        public void OnHoverEnable(bool hover)
+        {
+        }
+    }
+    class MessageBoxItem<T> : MessageBoxItem
+    {
+        public Action<T> OnClose;
+
+        public MessageBoxItem(string msg) : base(msg)
+        {
+            Enabled = false;
+        }
+
+        public MessageBoxItem(PageItem content) : base(content)
+        {
+            Enabled = false;
+        }
+
+        public void Show()
+        {
+            Enabled = true;
+        }
+
+        public void Close(T result)
+        {
+            Enabled = false;
+            OnClose?.Invoke(result);
         }
     }
 }

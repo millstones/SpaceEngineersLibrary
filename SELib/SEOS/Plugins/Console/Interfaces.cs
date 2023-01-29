@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
@@ -19,8 +20,9 @@ namespace IngameScript
     {
         void SwitchPage(string id);
         void SwitchPage(Page page);
-        void ShowMessageBox(string msg);
-        void ShowMessageBox(MessageBox msg);
+        void ShowMessageBox(string msg, int closeSec = int.MaxValue);
+        void ShowMessageBox(MessageBoxItem msg, int closeSec = int.MaxValue);
+        void CloseMessageBox();
     }
     interface ISurfaceDrawer
     {

@@ -70,7 +70,7 @@ namespace IngameScript
                     block => block.CustomName.Contains(ConsolePluginSetup.SURFACE_MARK));
 
                 _surface.Tick(blocks);
-                _os.Program.Echo.Invoke($"Console plugin. Last drawn sprites count:{_surface.LastDrawnSprites}");
+                _os.Program.Echo.Invoke($"Console plugin. Drawn {_surface.LastDrawnSprites} sprites on {_surface.DrawerCount} surfaces");
                 tick++;
                 yield return null;
             }

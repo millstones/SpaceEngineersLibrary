@@ -178,8 +178,8 @@ namespace IngameScript
             var sb = new StringBuilder();
 
             sb.AppendLine($"GUZUN OS <Plugins: {Plugins.Count} Modules: {Modules.Count}>");
-            sb.AppendLine($"PRC load: AWG:{cpAvg:P0} MAX:{_cpMax:P0}");
-            sb.AppendLine($"RAM load: AWG:{ramAvg:P0} MAX:{_ramMax:P0}");
+            sb.AppendLine($"CPU load: awg:{cpAvg:P0} max:{_cpMax:P0}");
+            sb.AppendLine($"RAM load: awg:{ramAvg:P0} max:{_ramMax:P0}");
             Program.Echo(sb.ToString());
         }
 

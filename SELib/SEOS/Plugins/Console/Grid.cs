@@ -11,10 +11,7 @@ namespace IngameScript
     abstract class PageItemContainer : PageItem, IEnumerable<PageItem>
     {
         public abstract IEnumerator<PageItem> GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         
         protected override void PreDraw()
         {
@@ -147,19 +144,18 @@ namespace IngameScript
         public override IEnumerator<PageItem> GetEnumerator() => _items.Select(x => x.Key).GetEnumerator();
     }
     
-    class Menu : StackPanel<Link>
+    class LinkDownList : StackPanel<Link>
     {
         float? _textScale;
 
-        public Menu(float? textScale=null) : base(true)
+        public LinkDownList(float? textScale=null) : base(true)
         {
             _textScale = textScale;
-            Border = true;
+            //Border = true;
         }
 
-        public new Menu Add(Link item, int steps = 1)
+        public new LinkDownList Add(Link item, int steps = 1)
         {
-            
             throw new NotSupportedException();
             /*
             item.TextScale = _textScale;
@@ -168,9 +164,61 @@ namespace IngameScript
             */
         }
         
-        public Menu Add(string item, Action<IConsole> click)
+        public LinkDownList Add(string item, Action<IConsole> click)
         {
             base.Add(new Link(item, click, _textScale));
+            return this;
+        }
+    }
+
+    class Menu : Text, IInteractive
+    {
+        class MenuDrop : MessageBoxItem<string>
+        {
+            public MenuDrop(string msg) : base(msg)
+            { }
+
+            public MenuDrop(PageItem content) : base(content)
+            { }
+        }
+        LinkDownList _downList;
+        MenuDrop _msgBox;
+        public void OnSelect(IConsole console, double power)
+        {
+            if (power > 0.7)
+            {
+                _msgBox = new MenuDrop(_downList);
+                _msgBox.OnClose +=s => console.ShowMessageBox(s);
+                console.ShowMessageBox(_msgBox);
+                _msgBox.Show();
+            }
+            if (power < -0.7) console.CloseMessageBox();
+        }
+
+        public void OnInput(IConsole console, Vector3 dir)
+        {
+
+        }
+
+        public void OnHoverEnable(bool hover)
+        {
+            Highlighting = true;
+        }
+
+        public Menu(string txt, float? scale = null, Color? color = null) : base(txt, scale, color)
+        {
+            _downList = new LinkDownList(scale);
+        }
+
+        public Menu(Func<string> txt, float? scale = null, Color? color = null) : base(txt, scale, color)
+        {
+            _downList = new LinkDownList(scale);
+        }
+
+        public Menu Add(string item, Action<IConsole> click)
+        {
+            click += console => _msgBox.Close(item);
+            _downList.Add(item, click);
             return this;
         }
     }

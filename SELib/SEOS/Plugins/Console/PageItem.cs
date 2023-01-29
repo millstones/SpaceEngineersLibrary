@@ -221,22 +221,25 @@ namespace IngameScript
             };
         }
     }
-    class Link : PageItem, IInteractive
+    class Link : Text, IInteractive
     {
         Action<IConsole> _select;
-        Text _text;
-        public Link(string txt, Action<IConsole> @select, float? scale = null, Color? color = null)
+        public Link(string txt, Action<IConsole> @select, float? scale = null, Color? color = null) : base(txt, scale, color)
+        {
+            Build(select);
+        }
+
+        public Link(Func<string> txt, Action<IConsole> @select, float? scale = null, Color? color = null) : base(txt, scale, color)
+        {
+            Build(select);
+        }
+
+        void Build(Action<IConsole> @select)
         {
             Border = false;
             Background = true;
             
             _select = @select;
-            _text = new Text(txt, scale, color);
-        }
-
-        protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites, ref IInteractive interactive)
-        {
-            _text.Draw(drawer, ref viewport, ref sprites, ref interactive);
         }
 
         public void OnSelect(IConsole console, double power)
