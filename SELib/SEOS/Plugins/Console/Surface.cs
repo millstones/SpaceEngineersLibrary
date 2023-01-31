@@ -26,7 +26,8 @@ namespace IngameScript
                 DateTime _msgAutoCloseTime;
 
                 Page _currentPage;
-                MessageBoxItem _currentMsgBoxItem;
+                MsgBoxItem _currentMsgBoxItem;
+                RectangleF? _currentMsgBoxViewport;
                 public SysCanvas(Drawer drawer, Page startPage)
                 {
                     _drawer = drawer;
@@ -35,7 +36,7 @@ namespace IngameScript
 
                     Add(new FlexiblePanel<PageItem>()
                         .Add(new Text("SETUP"))
-                        .Add(new Menu("PAGES", 0.5f)
+                        .Add(new Menu("PAGES")
                             .Add("item 1", console => { console.ShowMessageBox("item 1"); })
                             .Add("item 2", console => { console.ShowMessageBox("item 2"); })
                             .Add("item 3", console => { console.ShowMessageBox("item 3"); })
@@ -59,28 +60,36 @@ namespace IngameScript
                     base.PreDraw();
                 }
 
-                protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites,
-                    ref IInteractive interactive)
+                protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
                 {
-                    base.OnDraw(drawer, ref viewport, ref sprites, ref interactive);
-                    
+                    var retVal = base.OnDraw(drawer, ref viewport, ref interactive);
+
                     var msbVpt = drawer.Viewport;
-                    msbVpt.Position += msbVpt.Size * 0.25f/2;
-                    msbVpt.Size *= 0.75f;
-                    _currentMsgBoxItem?.Draw(drawer, ref msbVpt, ref sprites, ref interactive);
+                    if (_currentMsgBoxViewport.HasValue)
+                        msbVpt = _currentMsgBoxViewport.Value;
+                    else
+                    {
+                        msbVpt.Position += msbVpt.Size * 0.25f/2;
+                        msbVpt.Size *= 0.75f;
+                    }
+                    
+                    _currentMsgBoxItem?.Draw(drawer, ref msbVpt, ref retVal, ref interactive);
+                    
+                    return retVal;
                 }
 
-                public void ShowMessageBox(string msg, int closeSec)
+                public void ShowMessageBox(string msg, RectangleF? viewport, int closeSec)
                 {
-                    ShowMessageBox(new MessageBoxItem(msg), closeSec);
+                    ShowMessageBox(new NoteMsgBox(NoteLevel.None, msg), viewport, closeSec);
                 }
 
-                public void ShowMessageBox(MessageBoxItem msg, int closeSec)
+                public void ShowMessageBox(MsgBoxItem msg, RectangleF? viewport, int closeSec)
                 {
                     CloseMessageBox();
 
                     _msgAutoCloseTime = DateTime.Now + TimeSpan.FromSeconds(closeSec < 0? ConsolePluginSetup.MSG_SHOW_TIME_SEC : closeSec);
                     _currentMsgBoxItem = msg;
+                    _currentMsgBoxViewport = viewport;
                     _drawer._lastInteractive?.OnHoverEnable(false);
                     _drawer._lastInteractive = null;
                 }
@@ -88,16 +97,19 @@ namespace IngameScript
                 public void CloseMessageBox()
                 {
                     _currentMsgBoxItem = null;
+                    _currentMsgBoxViewport = null;
                 }
                 public void SwitchPage(string id)
                 {
-                    SwitchPage(_drawer._surface.GetPage(id));
+                    var page = _drawer._surface.GetPage(id);
+                    if (page == null) 
+                        ShowMessageBox(new NoteMsgBox(NoteLevel.Error, $"Page '{id}' NOT FOUND"), null, 3);
+                    else SwitchPage(page);
                 }
 
                 public void SwitchPage(Page page)
                 {
-                    //_currentPage?.Dispose();
-                    _currentPage = page; //.GetDrawer(this, Viewport);
+                    _currentPage = page;
                 }
             }
             public RectangleF Viewport { get; }
@@ -150,8 +162,8 @@ namespace IngameScript
             public void SwitchPage(string id) => _sysCanvas.SwitchPage(id);
             public void SwitchPage(Page page) => _sysCanvas.SwitchPage(page);
 
-            public void ShowMessageBox(string msg, int closeSec = int.MaxValue)=> _sysCanvas.ShowMessageBox(msg, closeSec);
-            public void ShowMessageBox(MessageBoxItem msg, int closeSec = Int32.MaxValue) => _sysCanvas.ShowMessageBox(msg, closeSec);
+            public void ShowMessageBox(string msg, RectangleF? viewport=null, int closeSec = int.MaxValue)=> _sysCanvas.ShowMessageBox(msg,viewport, closeSec);
+            public void ShowMessageBox(MsgBoxItem msg, RectangleF? viewport=null, int closeSec = int.MaxValue) => _sysCanvas.ShowMessageBox(msg, viewport, closeSec);
             public void CloseMessageBox()
             {
                 _sysCanvas.CloseMessageBox();
@@ -228,11 +240,28 @@ namespace IngameScript
                 if (controller == null) return;
                 if (_input == null || _input.Cockpit != controller)
                 {
+                    var clickDetect = 0;
                     _input = new Input(controller, ConsoleId)
                     {
                         OnSelect = args =>
                         {
-                            _lastInteractive?.OnSelect(this, args.Power);
+                            if (Math.Abs(args.Power) > 0.7)
+                            {
+                                clickDetect++;
+                                if (clickDetect != 1) return;
+
+                                if (_lastInteractive == null)
+                                {
+                                    if (args.Power < -0.7) CloseMessageBox();
+                                }
+                                else
+                                {
+                                    if (args.Power < -0.7) _lastInteractive?.OnEsc(this);
+                                    if (args.Power > 0.7) _lastInteractive?.OnSelect(this);
+                                }
+                            }
+                            else
+                                clickDetect = 0;
                         },
                         OnInput = args =>
                         {
@@ -530,8 +559,7 @@ namespace IngameScript
 
         Page GetPage(string id)
         {
-            return _pages.FirstOrDefault(x => x.Id == id)
-                   ?? new Page404(id);
+            return _pages.FirstOrDefault(x => x.Id == id);
         }
 
         public void SwitchPage(string to, string onConsoleId)

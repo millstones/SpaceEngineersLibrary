@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using VRage.Game.GUI.TextPanel;
 using VRageMath;
 
 namespace IngameScript
@@ -17,7 +19,7 @@ namespace IngameScript
             Add(new Text(() => Title)
                 {
                     Alignment = Alignment.Center,
-                    Margin = new Vector4(4),
+                    //Margin = new Vector4(4),
                     Border = true
                 },
                     CreateArea(Vector2.Zero, new Vector2(1, 0.1f)))
@@ -25,40 +27,32 @@ namespace IngameScript
         }
     }
 
-    class Page404 : Page
+    abstract class MsgBoxItem : FreeCanvas, IInteractive
     {
-        public Page404(string notFoundedPageName) : base(notFoundedPageName)
-        {
-            Title = "Error 404";
-            Add(new Text($"Page '{notFoundedPageName}' NOT FOUND", 2, Color.Red), new RectangleF(Vector2.Zero, Vector2.One));
-        }
-    }
-
-    class MessageBoxItem : FreeCanvas, IInteractive
-    {
-        public MessageBoxItem(string msg)
+        protected MsgBoxItem()
         {
             Border = true;
             Background = true;
-
-            Add(new Text("'Title'"), CreateArea(Vector2.Zero, new Vector2(1, 0.05f)));
-            Add(new Text(msg), CreateArea(new Vector2(0, 0.05f), Vector2.One));
-            Add(new Link("X", console => console.CloseMessageBox()) {Border = true},
-                CreateArea(new Vector2(0.95f, 0), new Vector2(1, 0.05f)));
         }
-        public MessageBoxItem(PageItem content)
+
+        protected MsgBoxItem(PageItem content)
         {
             Border = true;
             Background = true;
 
             Add(content);
-            Add(new Link("X", console => console.CloseMessageBox()) {Border = true},
-                CreateArea(new Vector2(0.95f, 0), new Vector2(1, 0.05f)));
+            //Add(new Link("X", console => console.CloseMessageBox()) {Border = true},
+            //    CreateArea(new Vector2(0.95f, 0), new Vector2(1, 0.05f)));
         }
-        
-        public void OnSelect(IConsole console, double power)
+
+        public void OnSelect(IConsole console)
         {
-            if (power < -0.7) console.CloseMessageBox();
+        }
+
+        public void OnEsc(IConsole console)
+        {
+            console.CloseMessageBox();
+            //PixelPosition = PixelSize = null;
         }
 
         public void OnInput(IConsole console, Vector3 dir)
@@ -69,16 +63,16 @@ namespace IngameScript
         {
         }
     }
-    class MessageBoxItem<T> : MessageBoxItem
+    class MsgBoxItem<T> : MsgBoxItem
     {
         public Action<T> OnClose;
 
-        public MessageBoxItem(string msg) : base(msg)
+        public MsgBoxItem(string msg)
         {
             Enabled = false;
         }
 
-        public MessageBoxItem(PageItem content) : base(content)
+        public MsgBoxItem(PageItem content) : base(content)
         {
             Enabled = false;
         }
@@ -92,6 +86,54 @@ namespace IngameScript
         {
             Enabled = false;
             OnClose?.Invoke(result);
+        }
+    }
+
+    class NoteMsgBox : MsgBoxItem
+    {
+        float s;
+        float[] sArray = {1, 1.1f, 1.25f, 1.4f, 1.25f, 1.1f, 1, 0.9f, 0.75f, 0.6f, 0.75f, 0.9f};
+        int i;
+        public NoteMsgBox(NoteLevel level, string msg)
+        {
+
+            var title = "INFO";
+            var texture = "Arrow";
+            Color? c=null;
+            var r = 0f;
+            // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
+            switch (level)
+            {
+                case NoteLevel.Info:
+                    r = 1;
+                    break;
+                case NoteLevel.Waring:
+                    title = "WARING";
+                    texture = "Danger";
+                    c = Color.Yellow;
+                    break;
+                case NoteLevel.Error:
+                    title = "ERROR !!!";
+                    texture = "Cross";
+                    c = Color.Red;
+                    break;
+            }
+            
+            Add(new Text(title) {Border = true, Color = c}, CreateArea(Vector2.Zero, new Vector2(1, 0.1f)));
+            Add(new Image(texture){Border = true, Rotation = () => r, Scale = () => s},
+                CreateArea(new Vector2(0.4f, 0.2f), new Vector2(0.6f, 0.4f)));
+            Add(new Text(msg) {Color = c}, CreateArea(new Vector2(0.1f, 0.45f), new Vector2(0.9f)));
+            //Add(new Link("X", console => console.CloseMessageBox()) {Border = true},
+            //    CreateArea(new Vector2(0.95f, 0), new Vector2(1, 0.05f)));
+        }
+
+        protected override void PreDraw()
+        {
+            i++;
+            if (i >= sArray.Length) i = 0;
+            s = sArray[i];
+            
+            base.PreDraw();
         }
     }
 }

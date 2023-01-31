@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)DroneActualStatus.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ForPB.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalConst.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalSetups.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MessageBroker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Modules\Carrier\CarrierController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Modules\CNC\CNCModule.cs" />

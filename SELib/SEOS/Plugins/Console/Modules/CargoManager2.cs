@@ -36,7 +36,7 @@ namespace IngameScript
             {
                 Title = Id;
 
-                RightPanel = new LinkDownList(0.5f)
+                RightPanel = new LinkDownList {Scale = () => 0.5f}
                         .Add("Pages list:", console => { console.ShowMessageBox("CLICK"); })
                         .Add("Details", console => { })
                         .Add("Requests", console => { })
@@ -44,7 +44,7 @@ namespace IngameScript
                     ;
                 var cargo = cargoManager._cargos;
                 LeftPanel = new FlexiblePanel<PageItem>(true)
-                        .Add(new StackPanel<PageItem>(true)
+                        .Add(new StackPanel<PageItem>(true) {Scale = () => 0.5f}
                             .Add(new InfoLine("TOTAL VOLUME:", () => cargo.TotalVolume(), "m^3"))
                             .Add(new InfoLine("EMPLOYED VOLUME:", () => cargo.EmployedVolume(), "m^3"))
                             .Add(new InfoLine("EMPLOYED MASS:", () => cargo.EmployedMass(), "kg"))
@@ -52,7 +52,7 @@ namespace IngameScript
                                 () => cargo.TotalVolume() - cargo.EmployedVolume(),
                                 "m^3")))
 
-                        .Add(new ProgressBar(cargo.EmployedPercent) {Margin = new Vector4(10), Border = false})
+                        .Add(new ProgressBar(cargo.EmployedPercent) {/*Margin = new Vector4(10),*/ Border = false})
                     ;
 
                 Add(LeftPanel, CreateArea(new Vector2(0, 0.1f), new Vector2(0.5f, 1)));
@@ -63,9 +63,9 @@ namespace IngameScript
             {
                 public InfoLine(string txt1, Func<double> val, string txt2)
                 {
-                    Add(new Text(txt1, 0.5f) {Alignment = Alignment.Left}, 5);
-                    Add(new Text(val().ToStringPostfix(), 0.5f) {Border = true, Alignment = Alignment.Center}, 3);
-                    Add(new Text(txt2, 0.5f) {Alignment = Alignment.Right}, 2);
+                    Add(new Text(txt1) {Alignment = Alignment.Left}, 5);
+                    Add(new Text(val().ToStringPostfix()) {Border = true, Alignment = Alignment.Right}, 3);
+                    Add(new Text(txt2) {Alignment = Alignment.Right}, 2);
                 }
             }
         }

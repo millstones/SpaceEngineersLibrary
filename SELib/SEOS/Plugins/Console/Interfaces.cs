@@ -8,7 +8,8 @@ namespace IngameScript
     interface IInteractive
     {
         //bool IsMultipleClickSupport { get; }
-        void OnSelect(IConsole console, double power);
+        void OnSelect(IConsole console);
+        void OnEsc(IConsole console);
         void OnInput(IConsole console, Vector3 dir);
         void OnHoverEnable(bool hover);
     }
@@ -20,8 +21,8 @@ namespace IngameScript
     {
         void SwitchPage(string id);
         void SwitchPage(Page page);
-        void ShowMessageBox(string msg, int closeSec = int.MaxValue);
-        void ShowMessageBox(MessageBoxItem msg, int closeSec = int.MaxValue);
+        void ShowMessageBox(string msg, RectangleF? viewport = null, int closeSec = int.MaxValue);
+        void ShowMessageBox(MsgBoxItem msg, RectangleF? viewport = null, int closeSec = int.MaxValue);
         void CloseMessageBox();
     }
     interface ISurfaceDrawer

@@ -12,11 +12,13 @@ namespace IngameScript
     {
         public abstract IEnumerator<PageItem> GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-        
         protected override void PreDraw()
         {
             foreach (var pageItem in this)
             {
+                //if (Scale?.Invoke() != null) 
+                if (pageItem.Scale == null) 
+                    pageItem.Scale = Scale;
                 pageItem.Enabled = Enabled;
             }
         }
@@ -37,16 +39,10 @@ namespace IngameScript
 
         public override IEnumerator<PageItem> GetEnumerator() => Items.Select(x => x.Key).GetEnumerator();
 
-        protected override void PreDraw()
+        protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
         {
-            foreach (var pageItem in Items)
-            {
-                pageItem.Key.Enabled = Enabled;
-            }
-        }
-
-        protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites, ref IInteractive interactive)
-        {
+            var retVal = new List<MySprite>();
+            //var contentSize = viewport.Size;
             foreach (var pageItem in Items)
             {
                 var vpt = viewport;
@@ -54,8 +50,14 @@ namespace IngameScript
                 vpt.Position += scale.Position * vpt.Size;
                 vpt.Size *= scale.Size;
 
-                pageItem.Key.Draw(drawer, ref vpt, ref sprites, ref interactive);
+                pageItem.Key.Draw(drawer, ref vpt, ref retVal, ref interactive);
+                
+                //contentSize = Vector2.Max(vpt.Size, contentSize);
             }
+
+            //PixelSize = contentSize;
+
+            return retVal;
         }
     }
     class FlexiblePanel<T> : PageItemContainer where T : PageItem
@@ -73,13 +75,21 @@ namespace IngameScript
             return this;
         }
 
-        protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites, ref IInteractive interactive)
+        protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
         {
+            var retVal = new List<MySprite>();
+            //var contentSize = viewport.Size;
+            
             foreach (var item in Items)
             {
                 var vpt = GetViewport(viewport, item);
-                item.Key.Draw(drawer, ref vpt, ref sprites, ref interactive);
+                item.Key.Draw(drawer, ref vpt, ref retVal, ref interactive);
+                
+                //contentSize = Vector2.Max(vpt.Size, contentSize);
             }
+            
+            //PixelSize = contentSize;
+            return retVal;
         }
 
         RectangleF GetViewport(RectangleF parentViewport, KeyValuePair<T, int> item)
@@ -121,11 +131,13 @@ namespace IngameScript
             _items.Add(new KeyValuePair<T, int>(item, steps));
             return this;
         }
-        protected override void OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref List<MySprite> sprites,
-            ref IInteractive interactive)
+        protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
         {
-            var gridStep = drawer.GridStep;
+            var retVal = new List<MySprite>();
+            
+            var gridStep = drawer.GridStep * (Scale?.Invoke() ?? 1);
             var posShift = Vector2.Zero;
+            var contentSize = viewport.Size;
             foreach (var menuItem in _items)
             {
                 var vpt = viewport;
@@ -134,11 +146,16 @@ namespace IngameScript
 
                 vpt.Size = _vertical? new Vector2(vpt.Size.X, size.Y) : new Vector2(size.X, vpt.Size.Y);
                 
-                menuItem.Key.Enabled = Enabled;
-                menuItem.Key.Draw(drawer, ref vpt, ref sprites, ref interactive);
+                menuItem.Key.Draw(drawer, ref vpt, ref retVal, ref interactive);
                 
                 posShift += _vertical? new Vector2(0, size.Y) : new Vector2(size.X, 0);
+                
+                contentSize = Vector2.Max(vpt.Size, contentSize);
             }
+            
+            //PixelSize = contentSize;
+
+            return retVal;
         }
 
         public override IEnumerator<PageItem> GetEnumerator() => _items.Select(x => x.Key).GetEnumerator();
@@ -146,53 +163,50 @@ namespace IngameScript
     
     class LinkDownList : StackPanel<Link>
     {
-        float? _textScale;
-
-        public LinkDownList(float? textScale=null) : base(true)
+        public LinkDownList() : base(true)
         {
-            _textScale = textScale;
-            //Border = true;
         }
 
         public new LinkDownList Add(Link item, int steps = 1)
         {
             throw new NotSupportedException();
-            /*
-            item.TextScale = _textScale;
-            base.Add(item);
-            return this;
-            */
         }
         
         public LinkDownList Add(string item, Action<IConsole> click)
         {
-            base.Add(new Link(item, click, _textScale));
+            base.Add(new Link(item, click) {Scale = Scale});
             return this;
         }
     }
 
     class Menu : Text, IInteractive
     {
-        class MenuDrop : MessageBoxItem<string>
-        {
-            public MenuDrop(string msg) : base(msg)
-            { }
-
-            public MenuDrop(PageItem content) : base(content)
-            { }
-        }
         LinkDownList _downList;
-        MenuDrop _msgBox;
-        public void OnSelect(IConsole console, double power)
+        MsgBoxItem<string> _msgBox;
+
+        RectangleF? GetViewport()
         {
-            if (power > 0.7)
-            {
-                _msgBox = new MenuDrop(_downList);
-                _msgBox.OnClose +=s => console.ShowMessageBox(s);
-                console.ShowMessageBox(_msgBox);
-                _msgBox.Show();
-            }
-            if (power < -0.7) console.CloseMessageBox();
+            if (!PixelViewport.HasValue) return null;
+            
+            var vpt = PixelViewport.Value;
+            return new RectangleF(
+                vpt.Position + new Vector2(0, vpt.Height),
+                new Vector2(vpt.Width, vpt.Height * _downList.Count()));
+
+        }
+        public void OnSelect(IConsole console)
+        {
+            if (_msgBox == null)
+                _msgBox = new MsgBoxItem<string>(_downList) {Scale = Scale};
+            _msgBox.OnClose += s => console.SwitchPage(s); //console.ShowMessageBox(s);
+            console.ShowMessageBox(_msgBox, GetViewport());
+            _msgBox.Show();
+        }
+
+        public void OnEsc(IConsole console)
+        {
+            console.CloseMessageBox();
+            _msgBox = null;
         }
 
         public void OnInput(IConsole console, Vector3 dir)
@@ -205,14 +219,14 @@ namespace IngameScript
             Highlighting = true;
         }
 
-        public Menu(string txt, float? scale = null, Color? color = null) : base(txt, scale, color)
+        public Menu(string txt) : base(txt)
         {
-            _downList = new LinkDownList(scale);
+            _downList = new LinkDownList{Scale = Scale};
         }
 
-        public Menu(Func<string> txt, float? scale = null, Color? color = null) : base(txt, scale, color)
+        public Menu(Func<string> txt) : base(txt)
         {
-            _downList = new LinkDownList(scale);
+            _downList = new LinkDownList{Scale = Scale};
         }
 
         public Menu Add(string item, Action<IConsole> click)
