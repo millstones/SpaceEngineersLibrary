@@ -31,8 +31,13 @@ namespace IngameScript
         Vector2 GridStep { get; }
         Vector2 ArrowPosition { get; }
         string FontId { get; }
-        float FontScale { get; }
+        float FontSize { get; }
         ConsoleStyle Style { get; }
         Vector2 MeasureText(string txt, string fontId, float scale);
+    }
+
+    interface IText
+    {
+        float? FontSize { get; set; }
     }
 }

@@ -62,37 +62,40 @@ namespace IngameScript
         public void OnHoverEnable(bool hover)
         {
         }
+        protected IConsole Console;
+        public void Show(IConsole console, RectangleF? viewport = null, int closeSec = int.MaxValue)
+        {
+            Enabled = true;
+            Console = console;
+            Console.ShowMessageBox(this, viewport, closeSec);
+        }
+        public void Close()
+        {
+            Enabled = false;
+            Console?.CloseMessageBox();
+        }
+        
     }
     class MsgBoxItem<T> : MsgBoxItem
     {
         public Action<T> OnClose;
 
-        public MsgBoxItem(string msg)
-        {
-            Enabled = false;
-        }
-
         public MsgBoxItem(PageItem content) : base(content)
         {
             Enabled = false;
         }
-
-        public void Show()
-        {
-            Enabled = true;
-        }
-
+        
         public void Close(T result)
         {
-            Enabled = false;
             OnClose?.Invoke(result);
+            Close();
         }
     }
 
     class NoteMsgBox : MsgBoxItem
     {
         float s;
-        float[] sArray = {1, 1.1f, 1.25f, 1.4f, 1.25f, 1.1f, 1, 0.9f, 0.75f, 0.6f, 0.75f, 0.9f};
+        float[] sArray = {1, 1.1f, 1.25f, 1.4f, 1.4f, 1.1f};
         int i;
         public NoteMsgBox(NoteLevel level, string msg)
         {
@@ -120,7 +123,7 @@ namespace IngameScript
             }
             
             Add(new Text(title) {Border = true, Color = c}, CreateArea(Vector2.Zero, new Vector2(1, 0.1f)));
-            Add(new Image(texture){Border = true, Rotation = () => r, Scale = () => s},
+            Add(new Image(texture){Rotation = () => r, ImageScale = () => s},
                 CreateArea(new Vector2(0.4f, 0.2f), new Vector2(0.6f, 0.4f)));
             Add(new Text(msg) {Color = c}, CreateArea(new Vector2(0.1f, 0.45f), new Vector2(0.9f)));
             //Add(new Link("X", console => console.CloseMessageBox()) {Border = true},

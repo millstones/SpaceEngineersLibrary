@@ -55,7 +55,10 @@ namespace IngameScript
             {
                 public BatteryView(EnergyManager energy)
                 {
-                    
+                    Add(new FlexiblePanel<Text>(false)
+                        .Add(new Text("Storage power"))
+                        .Add(new Text(() => energy.Battery.Sum(x => x.CurrentStoredPower).ToStringPostfix()))
+                    );
                 }
             }
         }

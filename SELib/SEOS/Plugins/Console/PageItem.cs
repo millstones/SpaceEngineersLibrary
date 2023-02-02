@@ -19,14 +19,9 @@ namespace IngameScript
 
         // MARGIN: x-Left, y-Right, W-Up, Z-Down
         //public Vector4 Margin;
-        public Alignment Alignment;
-        public Func<float> Scale, Rotation;
+        public Alignment Alignment = Alignment.Center;
+        public Func<float> /*TextScale,*/ ImageScale, Rotation;
         protected bool Highlighting;
-        protected PageItem(Alignment alignment = Alignment.Center, Vector4? margin = null)
-        {
-            Alignment = alignment;
-            //Margin = margin ?? new Vector4(ConsolePluginSetup.PADDING_PX);
-        }
 
         public static RectangleF CreateArea(Vector2 leftUpPoint, Vector2 rightDownPoint)
         {
@@ -104,18 +99,16 @@ namespace IngameScript
             return s * step;
         }
 
-        protected MySprite GetSprite(string texture, RectangleF viewport, Color? color)
+        protected MySprite GetSprite(string texture, RectangleF viewport, Color? color, float rotation, float scale)
         {
-            var s = Scale?.Invoke();
-            var r = Rotation?.Invoke();
             return new MySprite
             {
                 Type = SpriteType.TEXTURE,
                 Data = texture,
-                Size = viewport.Size * (s ?? 1),
+                Size = viewport.Size * scale,// * (s ?? 1),
                 Position = viewport.Center,
                 Color = color,
-                RotationOrScale = r ?? 0,
+                RotationOrScale = rotation,// r ?? 0,
                 Alignment = TextAlignment.CENTER,
             };
         }
@@ -129,10 +122,10 @@ namespace IngameScript
             var p2 = viewport.Position + new Vector2(viewport.Width - w, 0);
             sprites.AddRange(new[]
             {
-                GetSprite("SquareSimple", new RectangleF(viewport.Position, xLine), color),
-                GetSprite("SquareSimple", new RectangleF(viewport.Position, yLine), color),
-                GetSprite("SquareSimple", new RectangleF(p1, xLine), color),
-                GetSprite("SquareSimple", new RectangleF(p2, yLine), color),
+                GetSprite("SquareSimple", new RectangleF(viewport.Position, xLine), color, 0, 1),
+                GetSprite("SquareSimple", new RectangleF(viewport.Position, yLine), color, 0, 1),
+                GetSprite("SquareSimple", new RectangleF(p1, xLine), color, 0, 1),
+                GetSprite("SquareSimple", new RectangleF(p2, yLine), color, 0, 1),
             });
 
             /*
@@ -145,14 +138,16 @@ namespace IngameScript
         {
             viewport.Size -= 2;
             viewport.Position += 1;
-            sprites.Add(GetSprite("SquareSimple", viewport, color));
+            sprites.Add(GetSprite("SquareSimple", viewport, color, 0, 1));
         }
     }
 
-    class Text : PageItem
+    class Text : PageItem, IText
     {
         public Color? Color;
         ReactiveProperty<string> _txt;
+        public float? FontSize { get; set; }
+
         public Text(string txt)
         {
             _txt = new ReactiveProperty<string>(txt);
@@ -167,33 +162,20 @@ namespace IngameScript
         {
             return new List<MySprite>{ GetText(drawer, _txt.Get(), viewport, Color ?? drawer.Style.SecondColor)};
         }
-        MySprite GetText(ISurfaceDrawer drawer, string text, RectangleF viewport, Color? color = null)
+
+        MySprite GetText(ISurfaceDrawer drawer, string text, RectangleF viewport, Color? color)
         {
             viewport.Size -= 1;
-            var scale = drawer.FontScale;
-            var textSize = drawer.MeasureText(text, drawer.FontId, scale);
-            var s = Scale?.Invoke();
-            if (s.HasValue)
-            {
-                scale *= s.Value;
-                textSize = drawer.MeasureText(text, drawer.FontId, scale);
-            }
-            else
-            {
-                if (textSize.X > viewport.Width)
-                {
-                    scale = viewport.Width / textSize.X;
-                }
+            var fSize = FontSize ?? drawer.FontSize;
+            var textSize = drawer.MeasureText(text, drawer.FontId, fSize);
+            var scaleTxt = viewport.Size / textSize;
 
-                if (textSize.Y > viewport.Height)
-                {
-                    scale = viewport.Height / textSize.Y;
-                }
-                
-                textSize = drawer.MeasureText(text, drawer.FontId, scale);
-            }
+            var scale = Math.Min(Math.Min(scaleTxt.X, scaleTxt.Y), fSize);
 
-            //Scale = scale;
+            textSize = drawer.MeasureText(text, drawer.FontId, scale);
+
+            FontSize = scale;
+            //TextScale = ()=>scale;
             
             var alt = Alignment == Alignment.Left
                 ? TextAlignment.LEFT
@@ -235,7 +217,7 @@ namespace IngameScript
         }
         protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
         {
-            return new List<MySprite> {GetSprite(_texture, viewport, Color)};
+            return new List<MySprite> {GetSprite(_texture, viewport, Color, Rotation?.Invoke() ?? 0, ImageScale?.Invoke() ?? 1)};
         }
     }
     class Link : Text, IInteractive
@@ -306,7 +288,7 @@ namespace IngameScript
             var c = drawer.Style.SecondColor;
             var cinv = Color.FromNonPremultiplied(0xFF - c.R, 0xFF - c.G, 0xFF - c.B, c.A);
             
-            var retVal = new List<MySprite>{GetSprite("SquareSimple", new RectangleF(position, size), cinv)};
+            var retVal = new List<MySprite>{GetSprite("SquareSimple", new RectangleF(position, size), cinv, 0, 1)};
             DrawBorder(viewport, ref retVal, cinv);
             
             _text.Draw(drawer, ref viewport, ref retVal, ref interactive);

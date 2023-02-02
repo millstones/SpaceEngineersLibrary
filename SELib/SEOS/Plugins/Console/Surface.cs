@@ -26,6 +26,7 @@ namespace IngameScript
                 DateTime _msgAutoCloseTime;
 
                 Page _currentPage;
+                RectangleF _currentPageViewport = CreateArea(new Vector2(0, 0.05f), new Vector2(1, 0.95f));
                 MsgBoxItem _currentMsgBoxItem;
                 RectangleF? _currentMsgBoxViewport;
                 public SysCanvas(Drawer drawer, Page startPage)
@@ -34,21 +35,20 @@ namespace IngameScript
                     _currentPage = startPage;
                     Background = false;
 
-                    Add(new FlexiblePanel<PageItem>()
+                    Add(new FlexiblePanel<PageItem>(true)
                         .Add(new Text("SETUP"))
-                        .Add(new Menu("PAGES")
-                            .Add("item 1", console => { console.ShowMessageBox("item 1"); })
-                            .Add("item 2", console => { console.ShowMessageBox("item 2"); })
-                            .Add("item 3", console => { console.ShowMessageBox("item 3"); })
-                            .Add("item 4", console => { console.ShowMessageBox("item 4"); })
+                        .Add(new Menu("PAGES", (console, s) => console.SwitchPage(s)) 
+                            .Add(drawer._surface._pages.Select(x=> x.Title).ToArray())
                         )
                         .Add(new Text("STORAGE"))
                         .Add(new Text("ENERGY"))
                         .Add(new Text(()=> DateTime.Now.ToLongTimeString())),
                         CreateArea(Vector2.Zero, new Vector2(1, 0.05f))
                     );
-                    Add(_currentPage, CreateArea(new Vector2(0, 0.05f), new Vector2(1, 0.95f)));
+                    //Add(_currentPage, _currentPageViewport);
                     Add(new Text("page-navigation"), CreateArea(new Vector2(0, 0.95f), Vector2.One));
+                    
+                    SwitchPage(startPage);
                 }
 
                 protected override void PreDraw()
@@ -109,7 +109,9 @@ namespace IngameScript
 
                 public void SwitchPage(Page page)
                 {
+                    Remove(_currentPage);
                     _currentPage = page;
+                    Add(_currentPage, _currentPageViewport);
                 }
             }
             public RectangleF Viewport { get; }
@@ -117,7 +119,7 @@ namespace IngameScript
 
             public Vector2 ArrowPosition => _input?.ArrowPos(Viewport) ?? Vector2.PositiveInfinity;
             public string FontId => _panel.Font;
-            public float FontScale => _panel.FontSize;
+            public float FontSize => _panel.FontSize;
             public ConsoleStyle Style { get; } = ConsoleStyle.MischieviousGreen;
 
             public string ConsoleId;
@@ -137,7 +139,7 @@ namespace IngameScript
                 _panel = panel;
 
                 Viewport = SetupSurface();
-                GridStep = MeasureText(" ", FontId, FontScale);
+                GridStep = MeasureText(" ", FontId, FontSize)*0.5f;
                 
                 _sysCanvas = new SysCanvas(this, startPage);
             }
