@@ -10,6 +10,8 @@ namespace IngameScript
 {
     abstract class PageItemContainer : PageItem, IEnumerable<PageItem>
     {
+        public abstract void Remove(PageItem itm);
+        public abstract void Clear();
         public abstract IEnumerator<PageItem> GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -38,6 +40,8 @@ namespace IngameScript
                 //    pageItem.TextScale = TextScale;
                 pageItem.Enabled = Enabled;
             }
+            
+            base.PreDraw();
         }
     }
     class FreeCanvas : PageItemContainer
@@ -49,9 +53,15 @@ namespace IngameScript
             Items.Add(item, viewport ?? new RectangleF(Vector2.Zero, Vector2.One));
             return this;
         }
-        public void Remove(PageItem item)
+        public override void Remove(PageItem item)
         {
-            Items.Remove(item);
+            if ((item != null) && Items.ContainsKey(item))
+                Items.Remove(item);
+        }
+
+        public override void Clear()
+        {
+            Items.Clear();
         }
 
         public override IEnumerator<PageItem> GetEnumerator() => Items.Select(x => x.Key).GetEnumerator();
@@ -59,7 +69,6 @@ namespace IngameScript
         protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
         {
             var retVal = new List<MySprite>();
-            //var contentSize = viewport.Size;
             foreach (var pageItem in Items)
             {
                 var vpt = viewport;
@@ -68,11 +77,7 @@ namespace IngameScript
                 vpt.Size *= scale.Size;
 
                 pageItem.Key.Draw(drawer, ref vpt, ref retVal, ref interactive);
-                
-                //contentSize = Vector2.Max(vpt.Size, contentSize);
             }
-
-            //PixelSize = contentSize;
 
             return retVal;
         }
@@ -82,18 +87,14 @@ namespace IngameScript
         public float? FontSize { get; set; }
         protected List<KeyValuePair<T, int>> Items = new List<KeyValuePair<T, int>>();
         bool _vertical;
-
-
+        
         public FlexiblePanel(bool vertical)
         {
-            //TextScale = null;
             _vertical = vertical;
         }
 
         public FlexiblePanel<T> Add(T item, int size=1)
         {
-            //item.TextScale = TextScale;
-            //if (item.TextScale == null) item.TextScale = TextScale;
             Items.Add(new KeyValuePair<T, int>(item, size));
             return this;
         }
@@ -133,6 +134,17 @@ namespace IngameScript
             return new RectangleF(position, size);
         }
 
+        public override void Remove(PageItem itm)
+        {
+            var rem = Items.FirstOrDefault(x => x.Key == itm);
+            Items.Remove(rem);
+        }
+
+        public override void Clear()
+        {
+            Items.Clear();
+        }
+
         public override IEnumerator<PageItem> GetEnumerator() => Items.Select(x=> x.Key).GetEnumerator();
     }
     class StackPanel<T> : PageItemContainer, IText where T : PageItem
@@ -149,7 +161,6 @@ namespace IngameScript
 
         public StackPanel<T> Add(T item, int steps = 1)
         {
-            //if (item.TextScale == null) item.TextScale = TextScale;
             _items.Add(new KeyValuePair<T, int>(item, steps));
             return this;
         }
@@ -176,6 +187,17 @@ namespace IngameScript
             return retVal;
         }
 
+        public override void Remove(PageItem itm)
+        {
+            var rem = _items.FirstOrDefault(x => x.Key == itm);
+            _items.Remove(rem);
+        }
+
+        public override void Clear()
+        {
+            _items.Clear();
+        }
+
         public override IEnumerator<PageItem> GetEnumerator() => _items.Select(x => x.Key).GetEnumerator();
     }
     
@@ -188,12 +210,31 @@ namespace IngameScript
 
         public LinkDownList Add(string item, Action<IConsole> click)
         {
-            base.Add(new Link(item, click));
+            base.Add(new Button(new Text(item), click));
             return this;
         }
 
         public LinkDownList() : base(false)
         {
+        }
+    }
+
+    class SwitchPanel<T> : FlexiblePanel<Switch<T>>
+    {
+        public T Selected { get; private set; }
+
+        public SwitchPanel(bool vertical) : base(vertical)
+        {
+            Border = true;
+        }
+
+        public new SwitchPanel<T> Add(Switch<T> item, int size = 1)
+        {
+            item.Select += console => { Selected = item.Value; };
+
+            base.Add(item, size);
+
+            return this;
         }
     }
 
@@ -236,10 +277,7 @@ namespace IngameScript
             
         }
 
-        public void OnHoverEnable(bool hover)
-        {
-            Highlighting = true;
-        }
+
 
         public Menu(string txt, Action<IConsole, string> click) : base(txt)
         {

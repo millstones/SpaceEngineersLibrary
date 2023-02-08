@@ -9,9 +9,10 @@
     <Import_RootNamespace>SEOS</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)DebugAPI.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DroneActualStatus.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ForPB.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExternalLib\DebugAPI.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExternalLib\ForPB.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExternalLib\TouchUiKit.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalConst.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSetups.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MessageBroker.cs" />
@@ -37,6 +38,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\DockContainer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Grid.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Interfaces.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Lib\BatteryModeSwitch.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Lib\BatteryView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Lib\OnOffSwitch.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Modules\EnergyManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\Page.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\Console\PageItem.cs" />

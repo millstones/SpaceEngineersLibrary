@@ -90,7 +90,6 @@ namespace IngameScript
                     _msgAutoCloseTime = DateTime.Now + TimeSpan.FromSeconds(closeSec < 0? ConsolePluginSetup.MSG_SHOW_TIME_SEC : closeSec);
                     _currentMsgBoxItem = msg;
                     _currentMsgBoxViewport = viewport;
-                    _drawer._lastInteractive?.OnHoverEnable(false);
                     _drawer._lastInteractive = null;
                 }
 
@@ -120,7 +119,7 @@ namespace IngameScript
             public Vector2 ArrowPosition => _input?.ArrowPos(Viewport) ?? Vector2.PositiveInfinity;
             public string FontId => _panel.Font;
             public float FontSize => _panel.FontSize;
-            public ConsoleStyle Style { get; } = ConsoleStyle.MischieviousGreen;
+            public ConsoleStyle Style { get; } = ConsoleStyle.MischieviousGreen2;
 
             public string ConsoleId;
             public int LastDrawSprites;
@@ -147,7 +146,7 @@ namespace IngameScript
             RectangleF SetupSurface()
             {
                 _panel.ContentType = ContentType.SCRIPT;
-                _panel.Script = "";
+                //_panel.Script = "";
                 _panel.ScriptBackgroundColor = Color.Darken(Style.FirstColor, 0.2); //_layout.Style.SecondColor;
                 _panel.ScriptForegroundColor = Color.Black;
 
@@ -196,11 +195,9 @@ namespace IngameScript
                 }
 
                 if (_lastInteractive == interactive) return;
-
-                _lastInteractive?.OnHoverEnable(false);
-                _lastInteractive = interactive;
-                _lastInteractive?.OnHoverEnable(true);
                 
+                _lastInteractive = interactive;
+
             }
 
             void DrawArrow(ref List<MySprite> sprites)
@@ -427,7 +424,7 @@ namespace IngameScript
             }
 
             _nextTimeForBlocksUpdate =
-                DateTime.Now + TimeSpan.FromSeconds(ConsolePluginSetup.UPDATE_SURFACES_LIST_PERIOD_SEC);
+                DateTime.Now + TimeSpan.FromSeconds(ConsolePluginSetup.SURFACES_LIST_UPDATE_PERIOD_SEC);
 
             var myTerminalBlocks = blocks as IMyTerminalBlock[] ?? blocks.ToArray();
             var blocksSurface =
@@ -505,12 +502,7 @@ namespace IngameScript
                 _consoles.Remove(consolesId);
             }
         }
-
-        // 'name [SURFACE_MARK]' - текстовая панель с первой попавшийся страницей
-        // 'name [SURFACE_MARK@id]' - текстовая панель с первой попавшийся страницей, id - id (имя) для управления
-        // 'name [SURFACE_MARK-s]' - текстовая панель . s-имя страницы
-        // 'name [SURFACE_MARK-n]' - текстовая панель многопанельного терм. блока с первой попавшийся страницей. n-номер текстовой панели
-        // 'name [SURFACE_MARK-n-s]' - текстовая панель многопанельного терм. блока. n-номер текстовой панели, s-имя страницы
+        
         IEnumerator<float> FindControllers(IEnumerable<IMyTerminalBlock> blocks)
         {
             var myTerminalBlocks = blocks.ToArray();
@@ -521,10 +513,10 @@ namespace IngameScript
                 var cockpit = block as IMyCockpit;
                 if (cockpit == null)
                     throw new Exception($"Block name of {block.CustomName} is not cockpit");
-                var ctrlResult = ConsoleNameParser.ParseLcdController(block.CustomName);
+                var ctrlResult = ConsoleNameParser.FindSubstring(ConsolePluginSetup.SURFACE_CONTROLLER_MARK, block.CustomName);
 
-                if (ctrlResult.ForLcdNameId == "") continue;
-                var id = _consoles.GetKeyFor(x => x.ConsoleId == ctrlResult.ForLcdNameId, -1);
+                if (string.IsNullOrEmpty(ctrlResult)) continue;
+                var id = _consoles.GetKeyFor(x => x.ConsoleId == ctrlResult, -1);
 
                 if (id == -1) continue;
 

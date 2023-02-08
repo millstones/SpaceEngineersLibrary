@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using VRage.Game.GUI.TextPanel;
 using VRageMath;
 // ReSharper disable CompareOfFloatsByEqualityOperator
@@ -11,6 +12,8 @@ namespace IngameScript
     abstract class PageItem
     {
         public RectangleF? PixelViewport;
+
+        public Color? BGColor, BorderColor;
         
         public bool Border;
         public bool Background;
@@ -18,10 +21,10 @@ namespace IngameScript
         public bool Enabled = true;
 
         // MARGIN: x-Left, y-Right, W-Up, Z-Down
-        //public Vector4 Margin;
+        public Vector4 Margin = new Vector4(1);
         public Alignment Alignment = Alignment.Center;
-        public Func<float> /*TextScale,*/ ImageScale, Rotation;
-        protected bool Highlighting;
+        public float? /*TextScale,*/ ImageScale, Rotation;
+        //protected bool Hover;
 
         public static RectangleF CreateArea(Vector2 leftUpPoint, Vector2 rightDownPoint)
         {
@@ -40,43 +43,56 @@ namespace IngameScript
             PixelViewport = viewport;
             PreDraw();
 
-            if (!Enabled)
-            {
-                DrawBackground(viewport, ref sprites, drawer.Style.FirstColor.Alpha(0.6f));
-            }
-            
             var itr = this as IInteractive;
             interactive = Enabled && itr != null && viewport.Contains(drawer.ArrowPosition)? itr : interactive;
 
-            if (Background)
-            {
-                var c = itr != null ? Color.Lighten(drawer.Style.FirstColor, 0.1) : drawer.Style.FirstColor;
-                c = Highlighting && Enabled ? Color.FromNonPremultiplied(0xFF - c.R, 0xFF - c.G, 0xFF - c.B, c.A) : c;
 
-                DrawBackground(viewport, ref sprites, c);
+            if (!Enabled || Background)
+            {
+                var bgColor = interactive == this
+                    ? drawer.Style.FirstColor.Inverse()
+                    : Enabled && BGColor.HasValue
+                        ?BGColor.Value
+                        : Enabled && itr != null
+                            ? Color.Lighten(drawer.Style.FirstColor, 0.5)
+                            : !Enabled 
+                                ? Color.Darken(drawer.Style.FirstColor, 0.5).Alpha(0.1f)
+                                : drawer.Style.FirstColor;
+                
+                DrawBackground(viewport, ref sprites, bgColor);
             }
 
             ToMargin(ref viewport);
             //ToStep(ref viewport, drawer.GridStep);
 
+            var txt = this as Text;
+            if (txt != null && interactive == this)
+            {
+                txt.Color = drawer.Style.FirstColor.Inverse().Inverse();
+            }
             var childSprites = OnDraw(drawer, ref viewport, ref interactive);
-
+            
+            if (txt != null && interactive == this)
+            {
+                txt.Color = null;
+            }
+            
+            
             sprites.AddRange(childSprites);
 
-            if (Border)
+            if (Enabled && Border)
             {
                 DrawBorder(viewport, ref sprites, drawer.Style.ThirdColor);
             }
 
+
             PostDraw();
-            
-            //sprites.Add(MySprite.CreateClearClipRect());
         }
 
         void ToMargin(ref RectangleF viewport)
         {
-            //viewport.Position += new Vector2(Margin.X, Margin.Z);
-            //viewport.Size -= new Vector2(Margin.X + Margin.Y, Margin.Z + Margin.W);
+            viewport.Position += new Vector2(Margin.X, Margin.Z);
+            viewport.Size -= new Vector2(Margin.X + Margin.Y, Margin.Z + Margin.W);
         }
 
         void ToStep(ref RectangleF viewport, Vector2 step)
@@ -118,7 +134,7 @@ namespace IngameScript
             var w = ConsolePluginSetup.PADDING_PX;
             var xLine = new Vector2(viewport.Width, w);
             var yLine = new Vector2(w, viewport.Height);
-            var p1 = viewport.Position + new Vector2(0, viewport.Height - w); // TODO: '-2' ХЗ почему если не вычесть не отображается линия нижняя
+            var p1 = viewport.Position + new Vector2(0, viewport.Height - w);
             var p2 = viewport.Position + new Vector2(viewport.Width - w, 0);
             sprites.AddRange(new[]
             {
@@ -134,7 +150,7 @@ namespace IngameScript
             */
         }
 
-        protected void DrawBackground(RectangleF viewport, ref List<MySprite> sprites, Color color)
+        void DrawBackground(RectangleF viewport, ref List<MySprite> sprites, Color color)
         {
             viewport.Size -= 2;
             viewport.Position += 1;
@@ -142,9 +158,12 @@ namespace IngameScript
         }
     }
 
-    class Text : PageItem, IText
+    abstract class Drawable : PageItem
     {
         public Color? Color;
+    }
+    class Text : Drawable, IText
+    {
         ReactiveProperty<string> _txt;
         public float? FontSize { get; set; }
 
@@ -160,7 +179,9 @@ namespace IngameScript
 
         protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
         {
-            return new List<MySprite>{ GetText(drawer, _txt.Get(), viewport, Color ?? drawer.Style.SecondColor)};
+            return Enabled 
+                ? new List<MySprite>{ GetText(drawer, _txt.Get(), viewport, Color ?? drawer.Style.SecondColor)}
+                : new List<MySprite>();
         }
 
         MySprite GetText(ISurfaceDrawer drawer, string text, RectangleF viewport, Color? color)
@@ -205,11 +226,9 @@ namespace IngameScript
             };
         }
     }
-
-    class Image : PageItem
+    class Image : Drawable
     {
         string _texture;
-        public Color? Color;
 
         public Image(string texture)
         {
@@ -217,43 +236,99 @@ namespace IngameScript
         }
         protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
         {
-            return new List<MySprite> {GetSprite(_texture, viewport, Color, Rotation?.Invoke() ?? 0, ImageScale?.Invoke() ?? 1)};
+            return Enabled
+                ? new List<MySprite> {GetSprite(_texture, viewport, Color, Rotation ?? 0, ImageScale ?? 1)}
+                : new List<MySprite>();
         }
     }
-    class Link : Text, IInteractive
+    class Link : FreeCanvas, IInteractive
     {
-        Action<IConsole> _select;
-        public Link(string txt, Action<IConsole> @select) : base(txt)
+        public Action<IConsole> Select;
+        public bool Pressed;
+        public Link(Action<IConsole> @select)// : base(txt)
         {
             Border = false;
             Background = true;
             
-            _select = @select;
+            Select = @select;
         }
 
-        public Link(Func<string> txt, Action<IConsole> @select) : base(txt)
+        public virtual void OnSelect(IConsole console)
         {
-            Border = false;
-            Background = true;
-            
-            _select = @select;
+            Pressed = true;
+            Select(console);
         }
 
-        public void OnSelect(IConsole console) => _select(console);
-
-        public void OnEsc(IConsole console)
+        public virtual void OnEsc(IConsole console)
         {
+            Pressed = false;
         }
 
-        public void OnInput(IConsole console, Vector3 dir)
+        public virtual void OnInput(IConsole console, Vector3 dir)
+        {}
+    }
+
+    class Button : Link
+    {
+        Drawable _content;
+        
+        public Button(Drawable content, Action<IConsole> @select) : base(@select)
         {
-
+            _content = content;
+            Select += console => Pressed = true;
         }
 
-        public void OnHoverEnable(bool hover)
+        protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
         {
-            Highlighting = hover;
+            var retVal = base.OnDraw(drawer, ref viewport, ref interactive);
+            if (Pressed)
+            {
+                BGColor = Color.Lighten(drawer.Style.Akcent, 0.2f);//drawer.Style.TrueColor;
+                Border = true;
+                _content.Color =  BGColor.Value.Inverse();
+            }
+            else
+            {
+                BGColor = Color.Darken(drawer.Style.Akcent, 0.2f);
+                Border = false;
+                _content.Color = null;
+            }
+
+            _content.Draw(drawer, ref viewport, ref retVal, ref interactive);
+
+            retVal.AddRange(base.OnDraw(drawer, ref viewport, ref interactive));
+
+            return retVal;
         }
+    }
+
+    class Switch<T> : Button
+    {
+        public readonly T Value;
+        ReactiveProperty<T> _prop;
+
+        public Switch(Drawable content, T value, ReactiveProperty<T> prop) : base(content, console =>prop.Set(value))
+        {
+            Value = value;
+            _prop = prop;
+        }
+
+        public override void OnEsc(IConsole console)
+        {
+            //base.OnEsc(console);
+        }
+        
+        protected override void PreDraw()
+        {
+            Pressed = _prop.Get().Equals(Value);
+            base.PreDraw();
+        }
+    }
+
+    class StringSwitch : Switch<string>
+    {
+        public StringSwitch(string value, ReactiveProperty<string> prop) : base(new Text(value), value, prop)
+        { }
     }
     class ProgressBar : PageItem
     {
@@ -272,6 +347,8 @@ namespace IngameScript
 
         protected override List<MySprite> OnDraw(ISurfaceDrawer drawer, ref RectangleF viewport, ref IInteractive interactive)
         {
+            if (!Enabled) return new List<MySprite>();
+            
             var amount = _amount.Get();
             var progress = Math.Max(amount, _minimum);
 
@@ -286,7 +363,9 @@ namespace IngameScript
                 ;
 
             var c = drawer.Style.SecondColor;
-            var cinv = Color.FromNonPremultiplied(0xFF - c.R, 0xFF - c.G, 0xFF - c.B, c.A);
+            var cinv = amount > _minimum 
+                ? drawer.Style.Akcent //Color.FromNonPremultiplied(0xFF - c.R, 0xFF - c.G, 0xFF - c.B, c.A)
+                : Color.DarkRed;
             
             var retVal = new List<MySprite>{GetSprite("SquareSimple", new RectangleF(position, size), cinv, 0, 1)};
             DrawBorder(viewport, ref retVal, cinv);

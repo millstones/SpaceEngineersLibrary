@@ -24,6 +24,7 @@ namespace IngameScript
     {
         const string GRID_NAME = "GUZUN OS CONSOLE TEST";
         readonly SEOS _os;
+        
         public Program()
         {
             _os = new SEOS(this, GlobalConst.GRID_GROUP_STATION, GRID_NAME)
@@ -32,6 +33,7 @@ namespace IngameScript
                 //.AddConsoleSite(new TestConsole())
                 .Build(new DefaultLogger(this))
                 ;
+            
         }
 
         public void Save()

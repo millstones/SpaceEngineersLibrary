@@ -56,16 +56,16 @@ namespace IngameScript
                 Add(LeftPanel, CreateArea(new Vector2(0, 0.1f), new Vector2(0.5f, 1)));
                 Add(RightPanel, CreateArea(new Vector2(0.5f, 0.1f), Vector2.One));
             }
-
             class InfoLine : FlexiblePanel<Text>
             {
                 public InfoLine(string txt1, Func<double> val, string txt2) : base(true)
                 {
                     Add(new Text(txt1) {Alignment = Alignment.Left}, 5);
-                    Add(new Text(val().ToStringPostfix()) {Alignment = Alignment.Right}, 3);
-                    Add(new Text(txt2) {Alignment = Alignment.Right}, 2);
+                    Add(new Text(val().ToStringPostfix(false)) {Alignment = Alignment.Right}, 3);
+                    Add(new Text(txt2) {Alignment = Alignment.Left}, 2);
                 }
             }
+
         }
 
         // class CargoManagerDetailPage : ContentPage

@@ -11,7 +11,7 @@ namespace IngameScript
 {
     static class Extension
     {
-        public static string ToStringPostfix(this double val)
+        public static string ToStringPostfix(this double val, bool withSign)
         {
             // https://translated.turbopages.org/proxy_u/en-ru.ru.27f7c658-63bed4d9-c1fb76dd-74722d776562/https/stackoverflow.com/questions/26209217/how-to-code-metric-prefix-kilo-mega-giga-etc-and-do-calculation-on-them
             string[] prefixeSI = {"y", "z", "a", "f","p", "n", "µ", "m", "", "k", "M", "G", "T", "P", "E", "Z", "Y"};
@@ -23,18 +23,16 @@ namespace IngameScript
                 log10 -= 3;
             var log1000 = Math.Max(-8, Math.Min(log10 / 3, 8));
 
-            var pref = prefixeSI[log1000 + 8];
-            pref = string.IsNullOrEmpty(pref) ? "" : $" [{pref}]";
-            return (val / Math.Pow(10, log1000 * 3)).ToString("###.#" + pref);
+            var prefix = withSign && val > 0 ? "+" : "";
+            var postfix = prefixeSI[log1000 + 8];
+            postfix = string.IsNullOrEmpty(postfix) ? "" : $" [{postfix}]";
+            return prefix + (val / Math.Pow(10, log1000 * 3)).ToString("###.#" + postfix);
 
         }
 
-        public static string ToStringPostfix(this long val)=> ((double) val).ToStringPostfix();
-        public static string ToStringPostfix(this float val)=> ((double) val).ToStringPostfix();
-        public static string ToStringPostfix(this int val)=> ((double) val).ToStringPostfix();
-
-        public static Color Invert(this Color color) =>
-            Color.FromNonPremultiplied(0xFF - color.R, 0xFF - color.G, 0xFF - color.B, color.A);
+        public static string ToStringPostfix(this long val, bool withSign)=> ((double) val).ToStringPostfix(withSign);
+        public static string ToStringPostfix(this float val, bool withSign)=> ((double) val).ToStringPostfix(withSign);
+        public static string ToStringPostfix(this int val, bool withSign)=> ((double) val).ToStringPostfix(withSign);
 
         #region MathHelper
 
@@ -365,7 +363,6 @@ namespace IngameScript
             rotor.TargetVelocityRPM = 0;
         }
         #endregion
-
         #region IMyCargoContainer
 
         public static Dictionary<MyItemType, MyFixedPoint> GetItems(this IEnumerable<IMyCargoContainer> containers)
@@ -390,6 +387,30 @@ namespace IngameScript
             return retVal;
         }
 
+        #endregion
+        #region IMyBatteryBlock
+
+        public static void SetMode(this IEnumerable<IMyBatteryBlock> batterys, ChargeMode mode)
+        {
+            foreach (var battery in batterys)
+            {
+                battery.ChargeMode = mode;
+            }
+        }
+
+        public static ChargeMode? GetMode(this IEnumerable<IMyBatteryBlock> batterys)
+        {
+            var myBatteryBlocks = batterys.ToList();
+
+            if (myBatteryBlocks.All(x => x.ChargeMode == ChargeMode.Auto))
+                return ChargeMode.Auto;
+            if (myBatteryBlocks.All(x => x.ChargeMode == ChargeMode.Discharge))
+                return ChargeMode.Discharge;
+            if (myBatteryBlocks.All(x => x.ChargeMode == ChargeMode.Recharge))
+                return ChargeMode.Recharge;
+
+            return null;
+        }
         #endregion
     }
 }

@@ -11,7 +11,6 @@ namespace IngameScript
         void OnSelect(IConsole console);
         void OnEsc(IConsole console);
         void OnInput(IConsole console, Vector3 dir);
-        void OnHoverEnable(bool hover);
     }
     interface IPageProvider
     {
