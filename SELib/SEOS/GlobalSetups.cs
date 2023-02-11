@@ -7,9 +7,4 @@
         Waring = 2,
         Error = 3
     }
-    
-    public class GlobalSetups
-    {
-        
-    }
 }

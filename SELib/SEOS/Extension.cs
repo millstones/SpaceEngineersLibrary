@@ -29,7 +29,6 @@ namespace IngameScript
             return prefix + (val / Math.Pow(10, log1000 * 3)).ToString("###.#" + postfix);
 
         }
-
         public static string ToStringPostfix(this long val, bool withSign)=> ((double) val).ToStringPostfix(withSign);
         public static string ToStringPostfix(this float val, bool withSign)=> ((double) val).ToStringPostfix(withSign);
         public static string ToStringPostfix(this int val, bool withSign)=> ((double) val).ToStringPostfix(withSign);
@@ -56,7 +55,6 @@ namespace IngameScript
         }
 
         #endregion
-
         #region IMyTerminalBlock
 
         public static void Enable(this IMyFunctionalBlock block, bool value) => block.Enabled = value;
