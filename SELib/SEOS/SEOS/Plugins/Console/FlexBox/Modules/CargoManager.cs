@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Sandbox.ModAPI.Ingame;
 using VRageMath;
-// ReSharper disable SpecifyACultureInStringConversionExplicitly
 
 namespace IngameScript
 {
-    class CargoManager2 : Module, IPageProvider
+    class CargoManager : Module, IPageProvider
     {
         //public override Func<IMyTerminalBlock, bool> BlockFilter => b => b.GetType() == typeof(IMyCargoContainer);
         List<IMyCargoContainer> _cargos;
@@ -17,7 +15,7 @@ namespace IngameScript
         public override void Awake(IEnumerable<IMyTerminalBlock> blocks)
         {
             _cargos = blocks.OfType<IMyCargoContainer>().ToList();
-            
+
             Page = new CargoManagerPage(this);
         }
 
@@ -28,41 +26,49 @@ namespace IngameScript
         }
 
 
-        class CargoManagerPage : Page
+        public class CargoManagerPage : Page
         {
-            public PageItem LeftPanel, RightPanel;
+            FlexItem _panel = new FlexItem();
 
-            public CargoManagerPage(CargoManager2 cargoManager) : base("Cargo storage manager")
+            public CargoManagerPage(CargoManager cargoManager) : base("C A R G O")
             {
-                Title = Id;
+                var getSet = new ReactiveProperty<string>(() => "", s => ConsolePlugin.ShowMsg(s));
+                var rightPanel = new FlexItem{Direction = FlexDirection.Column} //{Scale = () => 0.5f}
+                        .Add(new Text("Pages list:"))
+                        .Add(new Text("Pages list:"))
+                        .Add(new Text("Pages list:"))
+                        .Add(new Text("Pages list:"))
 
-                RightPanel = new LinkDownList() //{Scale = () => 0.5f}
-                        .Add("Pages list:", console => { console.ShowMessageBox("CLICK"); })
-                        .Add("Details", console => { })
-                        .Add("Requests", console => { })
-                        .Add("Limits", console => { })
+                    // .Add(new SwitchString("Details", getSet ))
+                    // .Add(new SwitchString("Requests", getSet ))
+                    // .Add(new SwitchString("Limits", getSet ))
                     ;
                 var cargo = cargoManager._cargos;
-                LeftPanel = new FlexiblePanel<PageItem>(false)
-                        .Add(new StackPanel<InfoLine>(false)//{TextScale = () => 0.5f}
+                var leftPanel = new FlexItem {Direction = FlexDirection.Column}
+                        .Add(new FlexItem() {Direction = FlexDirection.Column} 
                             .Add(new InfoLine("TOTAL VOLUME:", () => cargo.TotalVolume(), "m^3"))
-                            .Add(new InfoLine("EMPLOYED VOLUME:", () => cargo.EmployedVolume(), "m^3"))
-                            .Add(new InfoLine("EMPLOYED MASS:", () => cargo.EmployedMass(), "kg"))
-                            .Add(new InfoLine("FREE SPACE:", () => cargo.TotalVolume() - cargo.EmployedVolume(), "m^3")))
-
-                        .Add(new ProgressBar(cargo.EmployedPercent) {/*Margin = new Vector4(10),*/ Border = false})
+                            // .Add(new InfoLine("EMPLOYED VOLUME:", () => cargo.EmployedVolume(), "m^3"))
+                            // .Add(new InfoLine("EMPLOYED MASS:", () => cargo.EmployedMass(), "kg"))
+                            // .Add(new InfoLine("FREE SPACE:", () => cargo.TotalVolume() - cargo.EmployedVolume(), "m^3"))
+                            )
+                        .Add(new ProgressBar(cargo.EmployedPercent) {Vertical = true})
                     ;
 
-                Add(LeftPanel, CreateArea(new Vector2(0, 0.1f), new Vector2(0.5f, 1)));
-                Add(RightPanel, CreateArea(new Vector2(0.5f, 0.1f), Vector2.One));
+                _panel
+                    .Add(leftPanel)
+                    .Add(rightPanel)
+                    ;
+
+                Add(_panel);
             }
-            class InfoLine : FlexiblePanel<Text>
+
+            class InfoLine : FlexItem
             {
-                public InfoLine(string txt1, Func<double> val, string txt2) : base(true)
+                public InfoLine(string txt1, Func<double> val, string txt2)
                 {
-                    Add(new Text(txt1) {Alignment = Alignment.Left}, 5);
-                    Add(new Text(val().ToStringPostfix(false)) {Alignment = Alignment.Right}, 3);
-                    Add(new Text(txt2) {Alignment = Alignment.Left}, 2);
+                    //Add(new Text(txt1) {Align = Alignment.CenterLeft}, 5);
+                    //Add(new Text(val().ToStringPostfix(false)) {Align = Alignment.Center}, 3);
+                    //Add(new Text(txt2) {Align = Alignment.CenterRight}, 2);
                 }
             }
 

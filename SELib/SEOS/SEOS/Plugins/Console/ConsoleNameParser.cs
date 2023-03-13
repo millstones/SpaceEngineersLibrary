@@ -9,10 +9,6 @@ namespace IngameScript
         public string StartPageNameId;
     }
 
-    struct ParseLcdControllerResult
-    {
-        public string ForLcdNameId;
-    }
     static class ConsoleNameParser
     {
         // 'name [SURFACE_MARK]' - текстовая панель с первой попавшийся страницей
@@ -32,14 +28,14 @@ namespace IngameScript
             var surfaceReg = @"([0-9])";
             var siteNameReg = @"([a-zA-Z]*)";
             
-            var match10 = System.Text.RegularExpressions.Regex.Match(customName, $@"{surfaceMark}@{nameReg}-{siteNameReg}-{surfaceReg}");
-            var match11 = System.Text.RegularExpressions.Regex.Match(customName, $@"{surfaceMark}@{nameReg}-{surfaceReg}");
-            var match20 = System.Text.RegularExpressions.Regex.Match(customName, $@"{surfaceMark}@{nameReg}-{siteNameReg}");
-            var match30 = System.Text.RegularExpressions.Regex.Match(customName, $@"{surfaceMark}@{nameReg}");
+            var match10 = RegexMatch(customName, $@"{surfaceMark}@{nameReg}-{siteNameReg}-{surfaceReg}");
+            var match11 = RegexMatch(customName, $@"{surfaceMark}@{nameReg}-{surfaceReg}");
+            var match20 = RegexMatch(customName, $@"{surfaceMark}@{nameReg}-{siteNameReg}");
+            var match30 = RegexMatch(customName, $@"{surfaceMark}@{nameReg}");
             
-            var match40 = System.Text.RegularExpressions.Regex.Match(customName, $@"{surfaceMark}-{siteNameReg}-{surfaceReg}");
-            var match50 = System.Text.RegularExpressions.Regex.Match(customName, $@"{surfaceMark}-{surfaceReg}");
-            var match60 = System.Text.RegularExpressions.Regex.Match(customName, $@"{surfaceMark}-{siteNameReg}");
+            var match40 = RegexMatch(customName, $@"{surfaceMark}-{siteNameReg}-{surfaceReg}");
+            var match50 = RegexMatch(customName, $@"{surfaceMark}-{surfaceReg}");
+            var match60 = RegexMatch(customName, $@"{surfaceMark}-{siteNameReg}");
 
 
             if (match10.Success)
@@ -104,8 +100,11 @@ namespace IngameScript
             var surfaceMark = mark;
 
             var nameReg = @"([a-zA-Z]*)";
-            var match30 = System.Text.RegularExpressions.Regex.Match(customName, $@"{surfaceMark}{delimetr}{nameReg}");
+            var match30 = RegexMatch(customName, $@"{surfaceMark}{delimetr}{nameReg}");
             return match30.Success ? match30.Groups[1].Value : "";
         }
+
+        static System.Text.RegularExpressions.Match RegexMatch(string input, string pattern)=> 
+            System.Text.RegularExpressions.Regex.Match(input, pattern);
     }
 }

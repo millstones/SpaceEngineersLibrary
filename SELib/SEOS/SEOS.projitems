@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)ExternalLib\DebugAPI.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ExternalLib\ForPB.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExternalLib\OtherClasses.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ExternalLib\TouchUiKit.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalConst.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSetups.cs" />
@@ -30,22 +31,21 @@
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Modules\GyroController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Modules\MainConnector.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Modules\ThrustController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\ConsoleManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\ConsoleNameParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\ConsolePlugin.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\ConsolePluginSetup.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\ConsolePluginExtension.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\DockContainer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Grid.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\FlexItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\Modules\BatteryModeSwitch.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\Modules\BatteryView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\Modules\CargoManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\Content.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\Display.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\Modules\EnergyManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\Surface.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\SysPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Interfaces.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Lib\BatteryModeSwitch.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Lib\BatteryView.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Lib\OnOffSwitch.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Modules\EnergyManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Page.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\PageItem.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Surface.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Modules\CargoManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\Modules\CargoManager2.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Tasks\CancellationToken.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Tasks\Task.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Tasks\TaskBase.cs" />
@@ -76,5 +76,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)SEOS\Modules\DrillStation\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)SEOS\Plugins\Console\FlexBox\Modules\" />
   </ItemGroup>
 </Project>

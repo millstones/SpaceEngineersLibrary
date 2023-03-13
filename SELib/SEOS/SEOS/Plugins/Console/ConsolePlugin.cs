@@ -10,7 +10,7 @@ namespace IngameScript
         public new static ILogger Logger => INSTANCE._os.Logger;
         static ConsolePlugin INSTANCE;
         
-        Surface _surface;
+        ConsoleManager _consoleManager;
         List<IPageProvider> _pages = new List<IPageProvider>();
 
         SEOS _os;
@@ -28,13 +28,13 @@ namespace IngameScript
 
         void AddSubmodules()
         {
-            _os.AddModule<EnergyManager>(UpdateFrequency.Update10);
-            _os.AddModule<CargoManager2>(UpdateFrequency.Update10);
+            //_os.AddModule<EnergyManager>(UpdateFrequency.Update10);
+            //_os.AddModule<CargoManager>(UpdateFrequency.Update10);
         }
 
         public override void Message(string argument, UpdateType updateSource)
         {
-            _surface?.Message(argument);
+            _consoleManager?.Message(argument);
         }
         
         public override void Tick(double dt)
@@ -59,9 +59,8 @@ namespace IngameScript
             // ...
             //
 
-            _surface = new Surface(_pages);
+            _consoleManager = new ConsoleManager(_pages);
 
-            var tick = 0;
             // Update
             while (!_isPause)
             {
@@ -69,9 +68,8 @@ namespace IngameScript
                 _os.Program.GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(blocks,
                     block => block.CustomName.Contains(ConsolePluginSetup.SURFACE_MARK));
 
-                _surface.Tick(blocks);
-                _os.Program.Echo.Invoke($"Console plugin. Drawn {_surface.LastDrawnSprites} sprites on {_surface.DrawerCount} surfaces");
-                tick++;
+                _consoleManager.Tick(blocks);
+                _os.Program.Echo.Invoke($"Console plugin. Drawn {_consoleManager.LastDrawnSprites} sprites on {_consoleManager.DrawerCount} surfaces");
                 yield return null;
             }
         }
@@ -95,12 +93,12 @@ namespace IngameScript
         public static void SwitchPage(string to, string onConsoleId = "")
         {
             ThrowIfNotCreate();
-            INSTANCE._surface.SwitchPage(to, onConsoleId);
+            INSTANCE._consoleManager.SwitchPage(to, onConsoleId);
         }
         public static void ShowMsg(string msg, string onConsoleId = "")
         {
             ThrowIfNotCreate();
-            INSTANCE._surface.ShowMsg(msg, onConsoleId);
+            INSTANCE._consoleManager.ShowMsg(msg, onConsoleId);
         }
     }
 }

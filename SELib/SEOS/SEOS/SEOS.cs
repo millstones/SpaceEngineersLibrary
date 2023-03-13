@@ -258,9 +258,11 @@ namespace IngameScript
                     block.CustomName = block.CustomName.Replace(s, "");
                 }
                 var add = $"'{_gridInfo.Name}' :";
-                block.CustomName = block.CustomName.Replace("'", "");
-                block.CustomName = block.CustomName.Replace(" :", "");
-                block.CustomName = $"{add}{block.CustomName}";
+                block.CustomName = block.CustomName
+                    .Replace("'", "")
+                    .Replace(" :", "")
+                    .Insert(0, add);
+                //block.CustomName = $"{add}{block.CustomName}";
             }
             
             return this;
@@ -302,17 +304,14 @@ namespace IngameScript
 
         public void Log(string msg)
         {
-            Log(NoteLevel.Info, msg);
+            Log(NoteLevel.None, msg);
         }
 
         public void Log(NoteLevel msgType, string msg)
         {
-            if (msgType == NoteLevel.Info)
-            {
-                _echo(msg);
-                return;
-            }
-            if (_logStorage == null) return;
+            if (msgType == NoteLevel.None || msgType == NoteLevel.Info) _echo(msg);
+
+            if (_logStorage == null || msgType == NoteLevel.None) return;
             
             if (_counter > MAX_LINES)
             {
@@ -323,7 +322,8 @@ namespace IngameScript
             }
             
             _logStorage.CustomData += $"[{++_counter}] " + msg + "\n";
-            PrintChat(msgType, msg);
+            if (msgType == NoteLevel.Error)
+                PrintChat(msgType, msg);
         }
         
         void PrintChat(NoteLevel msgType, string msg)

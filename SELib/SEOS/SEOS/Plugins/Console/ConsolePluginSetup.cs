@@ -31,7 +31,9 @@ namespace IngameScript
 
     enum Alignment
     {
-        Center, Left, Right, Up, Down, CenterLeft, CenterUp, UpLeft, UpRight, DownLeft, DownRight
+        Center,
+        CenterLeft, CenterUp, CenterDown, CenterRight,
+        UpLeft, UpRight, DownLeft, DownRight
     }
     
     enum ConsoleFonts
@@ -40,45 +42,70 @@ namespace IngameScript
     }
     struct ConsoleStyle
     {
-        public Color FirstColor;
-        public Color SecondColor;
-        public Color ThirdColor;
-        public Color Akcent;
+        public Color BGColor;
+        public Color ContentColor;
+        public Color Accent;
+        public Color GoodAccent;
+        public Color BadAccent;
         public string FontId;
 
 
         public static ConsoleStyle Default => new ConsoleStyle
         {
-            FirstColor = Color.Gray, 
-            SecondColor = Color.Black, 
-            ThirdColor = Color.White, 
-            Akcent = Color.Green,
+            BGColor = Color.Gray, 
+            ContentColor = Color.Black, 
+            Accent = Color.White, 
+            GoodAccent = Color.Green,
+            BadAccent = Color.Red,
             FontId = ConsoleFonts.White.ParseFont(),
         };
 
         public static ConsoleStyle MischieviousGreen => new ConsoleStyle
         {
-            FirstColor = new Color(39, 39, 39),
-            SecondColor = new Color(255, 101, 47),
-            ThirdColor = new Color(20, 167, 108),
-            Akcent = Color.Green,
+            BGColor = new Color(39, 39, 39),
+            ContentColor = new Color(255, 101, 47),
+            Accent = new Color(20, 167, 108),
+            GoodAccent = Color.Green,
+            BadAccent = Color.Red,
             FontId = ConsoleFonts.LoadingScreen.ParseFont(),
         };
         public static ConsoleStyle MischieviousGreen2 => new ConsoleStyle
         {
-            FirstColor = new Color(76, 73, 71),
-            SecondColor = new Color(206, 204, 206),
-            ThirdColor = new Color(34, 32, 34),
-            Akcent =  new Color(110, 173, 58),
+            BGColor = new Color(76, 73, 71),
+            ContentColor = new Color(206, 204, 206),
+            Accent = new Color(34, 32, 34),
+            GoodAccent = Color.Green,
+            BadAccent = Color.Red,
             FontId = ConsoleFonts.LoadingScreen.ParseFont(),
         };
 
         public static ConsoleStyle BlackWhiteRed => new ConsoleStyle
         {
-            FirstColor = new Color(45, 48, 51),
-            SecondColor = new Color(170, 75, 65),
-            ThirdColor = new Color(212, 221, 225),
-            Akcent = Color.Green,
+            BGColor = new Color(45, 48, 51),
+            ContentColor = new Color(170, 75, 65),
+            Accent = new Color(212, 221, 225),
+            GoodAccent = Color.Green,
+            BadAccent = Color.Red,
+            FontId = ConsoleFonts.LoadingScreen.ParseFont(),
+        };
+
+        public static ConsoleStyle Complimentary => new ConsoleStyle
+        {
+            BGColor = "#0261ea".ColorFromHex(),
+            ContentColor = "#000000".ColorFromHex(),
+            Accent = "#e2ae15".ColorFromHex(),
+            GoodAccent = "#552790".ColorFromHex(),
+            BadAccent = "#b9110f".ColorFromHex(),
+            FontId = ConsoleFonts.LoadingScreen.ParseFont(),
+        };
+
+        public static ConsoleStyle Lingua => new ConsoleStyle
+        {
+            BGColor = "#2c4653".ColorFromHex(),
+            ContentColor = "#ffffff".ColorFromHex(),
+            Accent = "#0e4d6c".ColorFromHex(),
+            GoodAccent = "#e9ddc7".ColorFromHex(),
+            BadAccent = "#f05833".ColorFromHex(),
             FontId = ConsoleFonts.LoadingScreen.ParseFont(),
         };
     }

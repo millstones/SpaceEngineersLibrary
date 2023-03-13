@@ -37,7 +37,7 @@ namespace IngameScript
 
         MasterSlaveChannel AddSlave(params IMyProgrammableBlock[] slaves)
         {
-            
+            return this;
         }
     }
 }
