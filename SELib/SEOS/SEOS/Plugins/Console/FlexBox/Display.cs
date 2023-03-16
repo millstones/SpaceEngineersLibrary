@@ -46,6 +46,10 @@ namespace IngameScript
                 if (arrowPos.HasValue)
                 {
                     sprites.Add(DrawArrow(arrowPos.Value));
+                    var pos = MySprite.CreateText($"{arrowPos.Value.X:000}:{arrowPos.Value.Y:000}", 
+                        ConsoleFonts.Monospace.ParseFont(), Color.Red, 0.25f, TextAlignment.LEFT);
+                    pos.Position = arrowPos;
+                    sprites.Add(pos);
                 }
                 
                 frame.AddRange(sprites);

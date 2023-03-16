@@ -13,9 +13,9 @@ namespace IngameScript
             
             var getSet = new ReactiveProperty<ChargeMode>(() => battery.GetMode() ?? ChargeMode.Auto, battery.SetMode);
 
-            Add(new Switch<ChargeMode>(ChargeMode.Auto, getSet), 1);
-            Add(new Switch<ChargeMode>(ChargeMode.Discharge, getSet), 1);
-            Add(new Switch<ChargeMode>(ChargeMode.Recharge, getSet), 1);
+            Add(new Switch<ChargeMode>(ChargeMode.Auto, getSet));
+            Add(new Switch<ChargeMode>(ChargeMode.Discharge, getSet));
+            Add(new Switch<ChargeMode>(ChargeMode.Recharge, getSet));
         }
     }
 }

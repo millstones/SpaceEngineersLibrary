@@ -60,7 +60,7 @@ namespace IngameScript
         public TestPage()
         {
             // Direction = FlexDirection.Row;
-            //Direction = FlexDirection.Column;
+            Direction = FlexDirection.Column;
             // AlignItem = FlexAlignItem.Stretch;
             // AlignContent = FlexAlignContent.Start;
             //AlignContent = FlexAlignContent.End;
@@ -82,12 +82,13 @@ namespace IngameScript
         public FlexItemTestView(Color color) : base(new Rect {Color = color, Layer = Layers.BG, IsFill = true})
         {
             Direction = FlexDirection.Column;
+            Size = FlexSize.FromRelative(100, 1);
             
             _testItems = new FlexItem();
             _testItems
                 .Add(new FlexItem {Direction = FlexDirection.Row}
                     .Add(new Button(surface => { BtDirectionClick(); }, Color.YellowGreen))
-                    .Add(new ProgressBar(() => DateTime.Now.Second / 60f), flex: 3)
+                    .Add(new ProgressBar(() => DateTime.Now.Second / 60f), FlexSize.FromFlex(3))
                     .Add(new Rect {Color = Color.Red}, size: FlexSize.FromPixel(16 * 2, 9 * 2))
                 )
                 .Add(new FlexItem {Direction = FlexDirection.Row}
@@ -105,16 +106,16 @@ namespace IngameScript
                 .Add(new Button(s => BtAltItemClick(), "alt itm"))
                 .Add(new Button(s => BtAltContentClick(), "alt cnt"))
                 .Add(new Button(s => BtJustClick(), "just"))
-                .Add(new Button(s => Flex+=1, "flex +"))
-                .Add(new Button(s => Flex-=1, "flex -"))
+                .Add(new Button(s => Size = FlexSize.FromFlex(Size.GetFlex + 1), "flex +"))
+                .Add(new Button(s => Size = FlexSize.FromFlex(Size.GetFlex - 1), "flex -"))
                 ;
             txtPanel
                 .Add(new Text(() => _testItems.Direction.ToString()))
                 .Add(new Text(() => _testItems.AlignItem.ToString()))
                 .Add(new Text(() => _testItems.AlignContent.ToString()))
                 .Add(new Text(() => _testItems.Justify.ToString()))
-                .Add(new Text(() => Flex.ToString()))
-                .Add(new Text(() => Flex.ToString()))
+                .Add(new Text(() => Size.GetFlex.ToString()))
+                .Add(new Text(() => Size.GetFlex.ToString()))
                 ;
 
             Add(_testItems);

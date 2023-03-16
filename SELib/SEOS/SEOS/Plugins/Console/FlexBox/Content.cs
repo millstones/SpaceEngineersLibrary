@@ -93,9 +93,9 @@ namespace IngameScript
             var textSize = drawer.MeasureText(text, Scale ?? 1);
             var scaleTxt = vpt.Size / textSize;
 
-            Scale = Scale ?? Math.Min(Math.Min(scaleTxt.X, scaleTxt.Y), 1);
+            var scale = Scale ?? Math.Min(Math.Min(scaleTxt.X, scaleTxt.Y), 1);
 
-            textSize = drawer.MeasureText(text, Scale.Value);
+            textSize = drawer.MeasureText(text, scale);
 
             var alt = TextAlignment.CENTER;
 
@@ -130,7 +130,7 @@ namespace IngameScript
                     Size = vpt.Size,
                     Color = Color ?? drawer.Style.ContentColor,
                     FontId = drawer.Style.FontId,
-                    RotationOrScale = Scale.Value,
+                    RotationOrScale = scale,
                     Alignment = alt
                 }
             );

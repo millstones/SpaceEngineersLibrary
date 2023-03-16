@@ -43,28 +43,41 @@ namespace IngameScript
 
     struct FlexSize
     {
-        static Vector2 MinSize = new Vector2(16, 9) * 1;
-        uint _w, _h;
+        static Vector2 MinSize = new Vector2(16, 9) * 2;
+        uint? _w, _h;
         Vector2? _size;
+        int _flex;
 
-        public bool HasValue => _size.HasValue;
+        public bool IsPixel => _size.HasValue;
+        public bool IsRelative => _w.HasValue || _h.HasValue;
 
         // 0 - Auto size
 
         public Vector2 ResolveSize(Vector2 baseSize)
         {
-            if (HasValue) return Get;
+            if (IsPixel) return GetPixel;
+            if (!IsRelative) throw new Exception("Item size is flex !");
             
-            var s = baseSize * new Vector2(_w, _h) * 0.01f;
+            var s = baseSize * new Vector2(_w ?? 100, _h ?? 100) * 0.01f;
 
-            return new Vector2(Math.Max(MinSize.X, s.X), Math.Max(MinSize.Y, s.Y));
+            return Clamp(s);
         }
-        public Vector2 Get => _size.Value;
-
-        public static FlexSize FromPixel(Vector2 size) => new FlexSize
+        public Vector2 ResolveSize(Vector2 baseSize, int sumFlex)
         {
-            _size = new Vector2(Math.Max(MinSize.X, size.X), Math.Max(MinSize.Y, size.Y)),
-        };
+            if (IsRelative || IsPixel) throw new Exception("Item size is not flex !");
+            return Clamp(baseSize * _flex / sumFlex);
+        }
+        public Vector2 GetPixel => _size.Value;
+        public int GetFlex => _flex;
+
+        public static FlexSize FromPixel(Vector2 size) =>
+            new FlexSize
+            {
+                _size = size,
+            };
+
+        static Vector2 Clamp(Vector2 v) => new Vector2(Math.Max(MinSize.X, v.X), Math.Max(MinSize.Y, v.Y));
+        
 
         public static FlexSize FromRelative(Vector2I size) => new FlexSize
         {
@@ -72,6 +85,7 @@ namespace IngameScript
             _h = Clamp(size.Y),
         };
 
+        public static FlexSize FromFlex(int f) => new FlexSize{_flex = Math.Max(1, f)};
         public static FlexSize FromPixel(float w, float h) => FromPixel(new Vector2(w, h));
         public static FlexSize FromRelative(int w, int h) => FromRelative(new Vector2I(w, h));
         public static FlexSize FullViewport => new FlexSize{_h = 100, _w = 100};
@@ -84,17 +98,15 @@ namespace IngameScript
 
         public FlexDirection Direction = FlexDirection.Row;
         public FlexAlignItem AlignItem = FlexAlignItem.Stretch;
-        public FlexAlignContent AlignContent = FlexAlignContent.Start;
+        public FlexAlignContent AlignContent = FlexAlignContent.Stretch;
         public JustifyContent Justify = JustifyContent.SpaceAround;
-        public FlexSize Size = FlexSize.FullViewport;
+        public FlexSize Size = FlexSize.FromFlex(1);
         public int Order = 0;
-        public int Flex = 1;
         public bool Visible = true;
 
         readonly Content _content;
         Dictionary<int, List<FlexItem>> _items = new Dictionary<int, List<FlexItem>>();
 
-        int _layer;
         public FlexItem()
         {
             
@@ -117,16 +129,12 @@ namespace IngameScript
             if (_items.Values.SelectMany(x => x).Any())
             {
                 var vptItems = 
-                    ToJustify(viewport, ToAlignContent(viewport, SetupFlexSize(viewport, this)));
+                    ToJustify(viewport, ToAlignContent(viewport, SetupSize(viewport, this)));
                 
                 foreach (var item in vptItems.Keys)
                 {
                     var vpt = vptItems[item];
                     retVal.AddRange(item.Build(vpt));
-                }
-                foreach (var content in retVal)
-                {
-                    content.Layer += _layer;
                 }
             }
             if (_content != null)
@@ -145,17 +153,17 @@ namespace IngameScript
             
             _items[itm.Order].Add(itm);
 
-            itm._layer = _layer + 1;
-            
+            if (itm._content != null)
+                itm._content.Layer += _content?.Layer ?? 0;
+
             return this;
         }
-        public FlexItem Add(Content content, int flex=1, int order = 1, FlexSize? size = null)
+        public FlexItem Add(Content content, FlexSize? size = null, int order = 1)
         {
             var itm = new FlexItem(content)
             {
-                Flex = flex,
                 Order = order,
-                Size = size ?? FlexSize.FullViewport,
+                Size = size ?? FlexSize.FromFlex(1),
             };
 
             return Add(itm);
@@ -166,7 +174,10 @@ namespace IngameScript
         }
         void ToAlignItem(ref RectangleF viewport)
         {
-            var size = Size.ResolveSize(viewport.Size);
+            var size = (Size.IsRelative || Size.IsPixel)
+                ? Size.ResolveSize(viewport.Size)
+                : viewport.Size;
+            
             var pos = viewport.Position;
             switch (AlignItem)
             {
@@ -179,7 +190,7 @@ namespace IngameScript
                     pos = viewport.Center - size / 2;
                     break;
                 case FlexAlignItem.Stretch:
-                    size = viewport.Size;
+                    //size = viewport.Size;
                     break;
                 default:
                     throw new Exception("ArgumentOutOfRangeException");
@@ -190,36 +201,42 @@ namespace IngameScript
             viewport.Position = pos;
             viewport.Size = size;
         }
-        Dictionary<FlexItem, Vector2> SetupFlexSize(RectangleF viewport, FlexItem line)
+        Dictionary<FlexItem, Vector2> SetupSize(RectangleF viewport, FlexItem line)
         {
             var flexItems = line._items.Values.SelectMany(x => x).ToList();
 
             var lineSize = viewport.Size;
-            var freeSpace = lineSize - flexItems.Where(x=> x.Size.HasValue).Aggregate(Vector2.Zero, (a, b)=> a + b.Size.Get);
+            var pixelSize = flexItems
+                .Where(x=> x.Size.IsPixel)
+                .Aggregate(Vector2.Zero, (a, b)=> a + b.Size.GetPixel);
+            var relativeSize = flexItems
+                .Where(x=> x.Size.IsRelative)
+                .Aggregate(Vector2.Zero, (a, b)=> a + b.Size.ResolveSize(viewport.Size));
+            var flexSpace = viewport.Size - pixelSize - relativeSize;
 
-            var sumFlex = flexItems.Where(x=> !x.Size.HasValue).Sum(x => x.Flex);
-            var normalSize = freeSpace / sumFlex;
+            var sumFlex = flexItems.Where(x=> !x.Size.IsPixel && !x.Size.IsRelative).Sum(x => x.Size.GetFlex);
 
             var retVal = new Dictionary<FlexItem, Vector2>();
             
             foreach (var item in flexItems)
             {
                 Vector2 s;
-                if (!item.Size.HasValue)
+                if (!item.Size.IsPixel)
                 {
-                    if (line.Direction == FlexDirection.Column || line.Direction == FlexDirection.ColumnRevers)
-                    {
-                        s = item.Size.ResolveSize(new Vector2(lineSize.X, normalSize.Y * item.Flex));
-                    }
-                    else
-                    {
-                        s = item.Size.ResolveSize(new Vector2(normalSize.X * item.Flex, lineSize.Y));
-                    }
-
+                    s = item.Size.IsRelative 
+                        ? item.Size.ResolveSize(viewport.Size) 
+                        : item.Size.ResolveSize(flexSpace, sumFlex)
+                        ;
+                    
+                    s = (line.Direction == FlexDirection.Column || line.Direction == FlexDirection.ColumnRevers)
+                        ? new Vector2(lineSize.X, s.Y)
+                        : new Vector2(s.X, lineSize.Y)
+                        ;
                 }
                 else
-                    s = item.Size.Get;
-                
+                    s = item.Size.GetPixel;
+
+
                 retVal.Add(item, s);
             }
 
@@ -298,8 +315,8 @@ namespace IngameScript
             var retVal = new Dictionary<FlexItem, RectangleF>();
             var fillSize = sizeItems.Values.Select(x => x).Aggregate(Vector2.Zero, (a, b) => a + b.Size);
             var freeSpace = (Direction == FlexDirection.Column || Direction == FlexDirection.ColumnRevers)
-                    ? new Vector2(0, viewport.Size.Y - fillSize.Y)
-                    : new Vector2(viewport.Size.X - fillSize.X, 0)
+                    ? new Vector2(0, Math.Max(0, viewport.Size.Y - fillSize.Y))
+                    : new Vector2(Math.Max(0, viewport.Size.X - fillSize.X), 0)
                 ;
             var pos = viewport.Position;
             var space = Vector2.Zero;
